@@ -18,8 +18,8 @@ public class Server {
 
     private List<WorkerHandler> workers; // TODO: ???
 
-    private List<ExecuteChain> requests;
-    private List<ExecuteChain> processing;
+    private TreeSet<ExecuteChain> requests;
+    private TreeSet<ExecuteChain> processing;
 
     private Object chainsLock;
 
@@ -36,8 +36,8 @@ public class Server {
         this.programs = programs;
 
         workers = new LinkedList<>();
-        requests = new LinkedList<>();
-        processing = new LinkedList<>();
+        requests = new TreeSet<ExecuteChain>(new chainComp());
+        processing = new TreeSet<ExecuteChain>(new chainComp());
 
         chainsLock = new Object();
     }
@@ -155,11 +155,11 @@ public class Server {
     private void handleRequest(){
         synchronized (chainsLock) {
             if (requests.size() > 0) {
-                ExecuteChain chain = requests.get(0);
+                ExecuteChain chain = requests.first();
                 int programId = chain.getCurrentExecutable().getProgramId();
 
                 if (canAssign(MasterMain.getWeightOfProgram(programId))) {
-                    requests.remove(0);
+                    requests.pollFirst();
                     processing.add(chain);
                     process(chain);
                 }
@@ -188,12 +188,11 @@ public class Server {
 
     public void response(Executable response){
         synchronized (chainsLock) {
-            for (int i = 0; i < processing.size(); i++) {
-                ExecuteChain chain = processing.get(i);
+            for (ExecuteChain chain: processing) {
                 if (chain.getCurrentExecutable().getProgramId() == response.getProgramId() &&
                         chain.getCurrentExecutable().getInput() == response.getInput()) {
                     chain.programAnswered(response.getAnswer());
-                    processing.remove(i);
+                    processing.remove(chain);
 
                     if (chain.isAlive()) {
                         requests.add(chain);
@@ -213,5 +212,13 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+}
+
+class chainComp implements Comparator<ExecuteChain>
+{
+    public int compare(ExecuteChain c1, ExecuteChain c2)
+    {
+        return c1.getPriority() - c2.getPriority();
     }
 }

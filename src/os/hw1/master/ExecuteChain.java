@@ -50,4 +50,8 @@ public class ExecuteChain {
     public boolean isAlive(){
         return programIds.size() > 0;
     }
+
+    public int getPriority(){
+        return priority;
+    }
 }

@@ -11,7 +11,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class WorkerHandler {
-    int currentW, workerId;
+    int currentW, workerId, currentPort;
     long processId;
 
     private Scanner scanner;
@@ -54,12 +54,16 @@ public class WorkerHandler {
 
             Socket workerSocket = serverSocket.accept();
 
+            currentPort = workerSocket.getPort();
+
+            Logger.getInstance().log("worker " + workerId + " start " + processId + " " + currentPort);
+
             printStream = new PrintStream(workerSocket.getOutputStream());
             scanner = new Scanner(workerSocket.getInputStream());
 
             listenToWorker();
         } catch (IOException e) {
-//            Logger.getInstance().log("Unable to create process for a worker!");
+            Logger.getInstance().log("worker " + workerId + " stop " + processId + " " + currentPort);
             e.printStackTrace();
         }
     }
@@ -69,9 +73,7 @@ public class WorkerHandler {
             @Override
             public void run() {
                 while (true){
-//            Logger2.getInstance().log("Waiting for worker answer...");
                     String message = scanner.nextLine();
-//            Logger2.getInstance().log("Got a worker answer... " + message);
 
                     responseFromWorker(message);
                 }

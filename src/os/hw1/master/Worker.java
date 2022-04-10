@@ -53,7 +53,6 @@ public class Worker {
         Socket socket;
         try {
             socket = new Socket(InetAddress.getLocalHost(), MasterMain.workersPort);
-//            Logger2.getInstance().log("Port in worker side: " + MasterMain.workersPort);
 
             Scanner scanner = new Scanner(socket.getInputStream());
             PrintStream printStream = new PrintStream(socket.getOutputStream());
@@ -61,7 +60,6 @@ public class Worker {
             while(true){
                 String request = scanner.nextLine();
 
-                printStream = new PrintStream(socket.getOutputStream());
                 printStream.println(newRequest(request));
             }
         } catch (IOException e) {
