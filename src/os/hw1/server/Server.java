@@ -1,9 +1,6 @@
 package os.hw1.server;
 
-import os.hw1.master.Executable;
-import os.hw1.master.ExecuteChain;
-import os.hw1.master.Program;
-import os.hw1.master.Worker;
+import os.hw1.master.*;
 import os.hw1.util.Logger;
 
 import java.io.*;
@@ -12,20 +9,20 @@ import java.net.Socket;
 import java.util.*;
 
 public class Server {
-    private int portNumber, numberOfWorkers, w, numberOfArgs, numberOfPrograms;
+    private int mainPort, numberOfWorkers, w, numberOfArgs, numberOfPrograms;
     private List<String> commonArgs;
     private List<Program> programs;
 
     private ServerSocket server;
 
-    private List<Worker> workers;
+    private List<WorkerHandler> workers; // TODO: ???
 
     private List<ExecuteChain> requests;
-    private List<Executable> processing;
+    private List<ExecuteChain> processing;
 
-    public Server(int portNumber, int numberOfWorkers, int w, int numberOfArgs, int numberOfPrograms,
+    public Server(int mainPort, int numberOfWorkers, int w, int numberOfArgs, int numberOfPrograms,
                   List<String> commonArgs, List<Program> programs) {
-        this.portNumber = portNumber;
+        this.mainPort = mainPort;
         this.numberOfWorkers = numberOfWorkers;
         this.w = w;
         this.numberOfArgs = numberOfArgs;
@@ -62,6 +59,7 @@ public class Server {
     }
 
     public void start(int port){
+
         try {
             server = new ServerSocket(port);
 
@@ -69,55 +67,105 @@ public class Server {
 
             System.out.println("Server Started (this message is for tester)");
 
+            createInitialWorkers();
+            startInitialWorkers();
+
             listenForNewConnections();
+
+            startHandlingRequests();
         } catch(IOException e) {
             e.printStackTrace();
         }
     }
 
     private void listenForNewConnections() throws IOException {
-        while (true) {
-            Logger.getInstance().log("Waiting for a client ...");
+        Thread listeningThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    Logger.getInstance().log("Waiting for a client ...");
 
-            Socket clientSocket = null;
+                    Socket clientSocket = null;
+
+                    try {
+                        clientSocket = server.accept();
+                        Logger.getInstance().log("Client accepted");
+
+                        Scanner inputStream = new Scanner(clientSocket.getInputStream());
+
+                        Logger.getInstance().log("Start listening to client...:");
+
+                        String line = inputStream.nextLine();
+
+                        newQuery(clientSocket, line);
+                    } catch (IOException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        listeningThread.start();
+    }
+
+    private void createInitialWorkers(){
+        for(int i = 0; i < numberOfWorkers; i++){
+            workers.add(new WorkerHandler());
+        }
+    }
+
+    private void startInitialWorkers(){
+        for(WorkerHandler workerHandler: workers){
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    workerHandler.start();
+                }
+            });
+            thread.start();
+        }
+    }
+
+    private void startHandlingRequests(){
+        while(true) {
+            handleRequest();
 
             try {
-                clientSocket = server.accept();
-                Logger.getInstance().log("Client accepted");
-
-//                Worker worker = new Worker(portNumber, clientSocket);
-
-                listenToClient(clientSocket);
-            } catch (IOException e){
+                Thread.sleep(100); // TODO: is it correct?!
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void listenToClient(Socket socket) {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Scanner inputStream = new Scanner(socket.getInputStream());
-
-                    Logger.getInstance().log("Start listening to client...:");
-
-                    String line = inputStream.nextLine();
-
-                    newQuery(socket, line);
-                } catch (IOException e){
-                    try {
-                        socket.close();
-                    } catch (IOException ioException) {
-                        ioException.printStackTrace();
-                    }
-
-                    Logger.getInstance().log("Client lost!");
-                }
+    private void handleRequest(){
+        if(requests.size() > 0){
+            ExecuteChain chain = requests.get(0);
+            int programId = chain.getCurrentExecutable().getProgramId();
+            if(canAssign(MasterMain.getWeightOfProgram(programId))){
+                requests.remove(0);
+                processing.add(chain);
+                process(chain);
             }
-        });
-        thread.start();
+        }
+    }
+
+    private boolean canAssign(int w){
+        for(WorkerHandler workerHandler: workers){
+            if(workerHandler.getCurrentW() + w <= this.w){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void process(ExecuteChain chain){
+        WorkerHandler chosenWorker = null;
+        for(WorkerHandler workerHandler: workers){
+            if(chosenWorker == null || workerHandler.getCurrentW() < chosenWorker.getCurrentW()){
+                chosenWorker = workerHandler;
+            }
+        }
+        chosenWorker.requestFromServer(chain.getCurrentExecutable());
     }
 
     public void stop(){
@@ -128,19 +176,4 @@ public class Server {
         }
     }
 
-//    private int createProcess(int w){
-//        Process process = new ProcessBuilder().start();
-//
-//    }
-//
-//    private void createWorker(int w, int pid){
-//        Worker worker = new Worker(w);
-//    }
-//
-//    public void start(){
-//        for(int i = 0; i < numberOfWorkers; i++){
-//            int pid = createProcess(w);
-//            createWorker(w, pid);
-//        }
-//    }
 }

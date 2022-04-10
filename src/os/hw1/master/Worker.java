@@ -1,53 +1,50 @@
 package os.hw1.master;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import os.hw1.util.Logger;
+
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.Socket;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
 
 public class Worker {
-    private int id;
 
-    private Socket socket;
-    private Scanner scanner;
-    private PrintStream printStream;
+    private static int newRequest(String request){
+        String[] parts = request.split(" ");
+        return runProgram(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+    }
 
-    private List<Executable> requests;
+    private static int runProgram(int programId, int input){
+        Logger.getInstance().log("runProgram in worker: " + programId + " " + input);
 
-    public Worker(int port, Socket socket) {
-        this.socket = socket;
+        String[] commonArgs = {
+                "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
+                "-classpath",
+                "out/production/OS-HW1/"
+        };
 
         try {
-            printStream = new PrintStream(socket.getOutputStream());
-            scanner = new Scanner(socket.getInputStream());
+            Process process = new ProcessBuilder(
+                    commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.programs.Program" + programId
+            ).start();
+
+            PrintStream printStream = new PrintStream(process.getOutputStream());
+            Scanner scanner = new Scanner(process.getInputStream());
+
+            printStream.println(input);
+
+            return scanner.nextInt();
         } catch (IOException e){
             e.printStackTrace();
         }
 
-        requests = new LinkedList<>();
+        return -1;
     }
 
-//    public String request() throws IOException{
-//        return inputStream.readUTF();
-//    }
-//
-//    public void response(String message) throws IOException {
-//        outStream.writeUTF(message);
-//    }
-//
-//    public void start(){
-//
-//    }
-//
-//    public String getStatus(){
-//        return status;
-//    }
-
-    public int getId(){
-        return id;
+    public static void main(String[] args) {
+        System.out.println("Hello from worker 17!!!!!!!!!");
+        while(true){
+            Scanner scanner = new Scanner(System.in);
+            System.out.println(newRequest(scanner.nextLine()));
+        }
     }
 }

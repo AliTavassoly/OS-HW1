@@ -20,6 +20,10 @@ public class ExecuteChain {
         return new Executable(programIds.peek(), currentInput);
     }
 
+    public int getW(){
+        return MasterMain.getWeightOfProgram(programIds.peek());
+    }
+
     public void programAnswered(int answer){
         currentInput = answer;
         programIds.remove();

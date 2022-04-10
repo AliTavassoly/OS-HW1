@@ -1,9 +1,6 @@
 package os.hw1.master;
 
 import os.hw1.server.Server;
-import os.hw1.util.Logger;
-
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -33,7 +30,7 @@ public class MasterMain {
             String className = scanner.next();
             int weight = scanner.nextInt();
 
-            Program program = new Program(className, weight);
+            Program program = new Program(className, weight, i + 1);
             programs.add(program);
         }
     }
@@ -46,6 +43,22 @@ public class MasterMain {
         return -1;
     }
 
+    public static int getWeightOfProgram(int programId){
+        for(Program program: programs){
+            if(program.getId() == programId)
+                return program.getW();
+        }
+        return -1;
+    }
+
+    public static String getClassNameOfProgram(int programId){
+        for(Program program: programs){
+            if(program.getId() == programId)
+                return program.getClassName();
+        }
+        return "";
+    }
+
     public static void main(String[] args) {
         input();
 
@@ -53,5 +66,7 @@ public class MasterMain {
                 numberOfPrograms, commonArgs, programs);
 
         server.start(portNumber);
+
+        // TODO: shutdown
     }
 }
