@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.util.*;
 
 public class Server {
-    private int mainPort, numberOfWorkers, w, numberOfArgs, numberOfPrograms;
+    private int mainPort, numberOfWorkers, maxW, numberOfArgs, numberOfPrograms;
     private List<String> commonArgs;
     private List<Program> programs;
 
@@ -20,11 +20,11 @@ public class Server {
     private List<ExecuteChain> requests;
     private List<ExecuteChain> processing;
 
-    public Server(int mainPort, int numberOfWorkers, int w, int numberOfArgs, int numberOfPrograms,
+    public Server(int mainPort, int numberOfWorkers, int maxW, int numberOfArgs, int numberOfPrograms,
                   List<String> commonArgs, List<Program> programs) {
         this.mainPort = mainPort;
         this.numberOfWorkers = numberOfWorkers;
-        this.w = w;
+        this.maxW = maxW;
         this.numberOfArgs = numberOfArgs;
         this.numberOfPrograms = numberOfPrograms;
         this.commonArgs = commonArgs;
@@ -63,9 +63,11 @@ public class Server {
         try {
             server = new ServerSocket(port);
 
+            System.out.println("Server Started (this message is for tester)");
+
             Logger.getInstance().log("Server started");
 
-            System.out.println("Server Started (this message is for tester)");
+            Logger.getInstance().log("Size of programs: " + programs.size());
 
             createInitialWorkers();
             startInitialWorkers();
@@ -109,7 +111,7 @@ public class Server {
 
     private void createInitialWorkers(){
         for(int i = 0; i < numberOfWorkers; i++){
-            workers.add(new WorkerHandler());
+            workers.add(new WorkerHandler(this));
         }
     }
 
@@ -130,7 +132,7 @@ public class Server {
             handleRequest();
 
             try {
-                Thread.sleep(100); // TODO: is it correct?!
+                Thread.sleep(50); // TODO: is it correct?!
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -141,6 +143,7 @@ public class Server {
         if(requests.size() > 0){
             ExecuteChain chain = requests.get(0);
             int programId = chain.getCurrentExecutable().getProgramId();
+
             if(canAssign(MasterMain.getWeightOfProgram(programId))){
                 requests.remove(0);
                 processing.add(chain);
@@ -151,7 +154,7 @@ public class Server {
 
     private boolean canAssign(int w){
         for(WorkerHandler workerHandler: workers){
-            if(workerHandler.getCurrentW() + w <= this.w){
+            if(workerHandler.getCurrentW() + w <= maxW){
                 return true;
             }
         }
@@ -166,6 +169,25 @@ public class Server {
             }
         }
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
+    }
+
+    public void response(Executable response){
+        for(int i = 0; i < processing.size(); i++){
+            ExecuteChain chain = processing.get(i);
+            if(chain.getCurrentExecutable().getProgramId() == response.getProgramId() &&
+                chain.getCurrentExecutable().getInput() == response.getInput()){
+                chain.programAnswered(response.getAnswer());
+                processing.remove(i);
+
+                if(chain.isAlive()){
+                    requests.add(chain);
+                } else {
+                    chain.sendResponseToClient(response.getAnswer());
+                }
+
+                return;
+            }
+        }
     }
 
     public void stop(){

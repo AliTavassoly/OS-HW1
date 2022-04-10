@@ -4,9 +4,21 @@ public class Executable {
     private int programId;
     private int input;
 
+    private int answer;
+
     public Executable(int programId, int input) {
         this.programId = programId;
         this.input = input;
+    }
+
+    public Executable(int programId, int input, int answer){
+        this.programId = programId;
+        this.input = input;
+        this.answer = answer;
+    }
+
+    public int getAnswer(){
+        return answer;
     }
 
     public int getProgramId() {

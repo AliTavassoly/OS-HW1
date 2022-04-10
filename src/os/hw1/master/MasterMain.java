@@ -1,6 +1,8 @@
 package os.hw1.master;
 
 import os.hw1.server.Server;
+import os.hw1.util.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -35,14 +37,6 @@ public class MasterMain {
         }
     }
 
-    public static int getWeightOfProgram(String className){
-        for(Program program: programs){
-            if(program.getClassName().equals(className))
-                return program.getW();
-        }
-        return -1;
-    }
-
     public static int getWeightOfProgram(int programId){
         for(Program program: programs){
             if(program.getId() == programId)
@@ -61,7 +55,6 @@ public class MasterMain {
 
     public static void main(String[] args) {
         input();
-
         Server server = new Server(portNumber, numberOfWorkers, w, numberOfArgs,
                 numberOfPrograms, commonArgs, programs);
 
