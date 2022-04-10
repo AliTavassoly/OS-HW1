@@ -47,8 +47,7 @@ public class Tester {
         Arrays.stream(programs).forEach(printStream::println);
         printStream.flush();
         Scanner scanner = new Scanner(process.getInputStream());
-
-        System.out.println(scanner.nextLine());  // wait for first line of output to ensure that master initialization is completed
+        scanner.nextLine(); // wait for first line of output to ensure that master initialization is completed
         return process;
     }
 
@@ -80,7 +79,6 @@ public class Tester {
             PrintStream printStream = new PrintStream(socket.getOutputStream());
             printStream.println(request);
             int response = scanner.nextInt();
-            System.out.println(response);
             socket.close();
             return new Response(System.currentTimeMillis() - start, response);
         } catch (IOException e) {
@@ -107,6 +105,7 @@ public class Tester {
             throw new Exception("boom");
         }
     }
+
 
     public static void main(String[] args) throws Exception {
         Process process = runProcess();

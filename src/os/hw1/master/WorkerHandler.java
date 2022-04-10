@@ -59,15 +59,11 @@ public class WorkerHandler {
     }
 
     public void requestFromServer(Executable executable){
-        Logger.getInstance().log("Task assigned to handler " + executable.getProgramId() + " " + executable.getInput());
-
         String request = String.valueOf(executable.getProgramId());
         request += " ";
         request += String.valueOf(executable.getInput());
         request += " ";
         request += MasterMain.getClassNameOfProgram(executable.getProgramId());
-
-        Logger.getInstance().log(request);
 
         printStream.println(request);
         printStream.flush();
@@ -79,8 +75,6 @@ public class WorkerHandler {
         String[] parts = response.split(" ");
 
         Executable executable = new Executable(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-
-        Logger2.getInstance().log("Exe: " + executable.getProgramId() + " " + executable.getInput() + " " + executable.getAnswer());
 
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
 

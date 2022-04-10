@@ -20,6 +20,8 @@ public class Server {
     private List<ExecuteChain> requests;
     private List<ExecuteChain> processing;
 
+    private Object chainsLock;
+
     public Server(int mainPort, int numberOfWorkers, int maxW, int numberOfArgs, int numberOfPrograms,
                   List<String> commonArgs, List<Program> programs) {
         this.mainPort = mainPort;
@@ -33,10 +35,14 @@ public class Server {
         workers = new LinkedList<>();
         requests = new LinkedList<>();
         processing = new LinkedList<>();
+
+        chainsLock = new Object();
     }
 
     private void newQuery(Socket socket, String query){
-        requests.add(new ExecuteChain(getInputOfQuery(query), getQueueOfQuery(query), socket));
+        synchronized (chainsLock) {
+            requests.add(new ExecuteChain(getInputOfQuery(query), getQueueOfQuery(query), socket));
+        }
     }
 
     private Queue<Integer> getQueueOfQuery(String query){
@@ -66,8 +72,6 @@ public class Server {
             System.out.println("Server Started (this message is for tester)");
 
             Logger.getInstance().log("Server started");
-
-            Logger.getInstance().log("Size of programs: " + programs.size());
 
             createInitialWorkers();
             startInitialWorkers();
@@ -132,7 +136,7 @@ public class Server {
             handleRequest();
 
             try {
-                Thread.sleep(50); // TODO: is it correct?!
+                Thread.sleep(10); // TODO: is it correct?!
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -140,14 +144,16 @@ public class Server {
     }
 
     private void handleRequest(){
-        if(requests.size() > 0){
-            ExecuteChain chain = requests.get(0);
-            int programId = chain.getCurrentExecutable().getProgramId();
+        synchronized (chainsLock) {
+            if (requests.size() > 0) {
+                ExecuteChain chain = requests.get(0);
+                int programId = chain.getCurrentExecutable().getProgramId();
 
-            if(canAssign(MasterMain.getWeightOfProgram(programId))){
-                requests.remove(0);
-                processing.add(chain);
-                process(chain);
+                if (canAssign(MasterMain.getWeightOfProgram(programId))) {
+                    requests.remove(0);
+                    processing.add(chain);
+                    process(chain);
+                }
             }
         }
     }
@@ -172,20 +178,22 @@ public class Server {
     }
 
     public void response(Executable response){
-        for(int i = 0; i < processing.size(); i++){
-            ExecuteChain chain = processing.get(i);
-            if(chain.getCurrentExecutable().getProgramId() == response.getProgramId() &&
-                chain.getCurrentExecutable().getInput() == response.getInput()){
-                chain.programAnswered(response.getAnswer());
-                processing.remove(i);
+        synchronized (chainsLock) {
+            for (int i = 0; i < processing.size(); i++) {
+                ExecuteChain chain = processing.get(i);
+                if (chain.getCurrentExecutable().getProgramId() == response.getProgramId() &&
+                        chain.getCurrentExecutable().getInput() == response.getInput()) {
+                    chain.programAnswered(response.getAnswer());
+                    processing.remove(i);
 
-                if(chain.isAlive()){
-                    requests.add(chain);
-                } else {
-                    chain.sendResponseToClient(response.getAnswer());
+                    if (chain.isAlive()) {
+                        requests.add(chain);
+                    } else {
+                        chain.sendResponseToClient(response.getAnswer());
+                    }
+
+                    return;
                 }
-
-                return;
             }
         }
     }
@@ -197,5 +205,4 @@ public class Server {
             e.printStackTrace();
         }
     }
-
 }
