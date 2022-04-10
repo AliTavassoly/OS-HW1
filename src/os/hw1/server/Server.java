@@ -71,7 +71,7 @@ public class Server {
 
             System.out.println("Server Started (this message is for tester)");
 
-            Logger.getInstance().log("Server started");
+//            Logger.getInstance().log("Server started");
 
             createInitialWorkers();
             startInitialWorkers();
@@ -89,17 +89,17 @@ public class Server {
             @Override
             public void run() {
                 while (true) {
-                    Logger.getInstance().log("Waiting for a client ...");
+//                    Logger.getInstance().log("Waiting for a client ...");
 
                     Socket clientSocket = null;
 
                     try {
                         clientSocket = server.accept();
-                        Logger.getInstance().log("Client accepted");
+//                        Logger.getInstance().log("Client accepted");
 
                         Scanner inputStream = new Scanner(clientSocket.getInputStream());
 
-                        Logger.getInstance().log("Start listening to client...:");
+//                        Logger.getInstance().log("Start listening to client...:");
 
                         String line = inputStream.nextLine();
 

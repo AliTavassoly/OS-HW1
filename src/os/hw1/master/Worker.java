@@ -15,7 +15,7 @@ public class Worker {
     }
 
     private static String runProgram(int programId, int input, String className){
-        Logger.getInstance().log("runProgram in worker: " + programId + " " + input + " " + className);
+//        Logger.getInstance().log("runProgram in worker: " + programId + " " + input + " " + className);
 
         String[] commonArgs = {
                 "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
@@ -31,20 +31,20 @@ public class Worker {
             PrintStream printStream = new PrintStream(process.getOutputStream());
             Scanner scanner = new Scanner(process.getInputStream());
 
-            Logger2.getInstance().log("This input: " + input + " is going into " + className);
-            Logger.getInstance().log("This input: " + input + " is going into " + className);
+//            Logger2.getInstance().log("This input: " + input + " is going into " + className);
+//            Logger.getInstance().log("This input: " + input + " is going into " + className);
             printStream.println(input);
             printStream.flush();
-            Logger2.getInstance().log("This input: " + input + " went into " + className);
-            Logger.getInstance().log("This input: " + input + " is going into " + className);
+//            Logger2.getInstance().log("This input: " + input + " went into " + className);
+//            Logger.getInstance().log("This input: " + input + " is going into " + className);
 
             int programOutput = scanner.nextInt();
-            Logger2.getInstance().log("This input: " + programOutput + " came from " + className);
+//            Logger2.getInstance().log("This input: " + programOutput + " came from " + className);
 
-            Logger.getInstance().log("Program answered: " + programOutput);
+//            Logger.getInstance().log("Program answered: " + programOutput);
 
             String response = programId + " " + input + " " + programOutput;
-            Logger2.getInstance().log(response);
+//            Logger2.getInstance().log(response);
 
             return response;
         } catch (IOException e){
@@ -57,9 +57,9 @@ public class Worker {
     public static void main(String[] args) {
         while(true){
             Scanner scanner = new Scanner(System.in);
-            Logger.getInstance().log("Worker is sad:( ");
+//            Logger.getInstance().log("Worker is sad:( ");
             String request = scanner.nextLine();
-            Logger.getInstance().log("Worker got: " + request);
+//            Logger.getInstance().log("Worker got: " + request);
             System.out.println(newRequest(request));
         }
     }

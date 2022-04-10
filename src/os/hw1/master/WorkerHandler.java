@@ -43,16 +43,16 @@ public class WorkerHandler {
 
             listenToWorker();
         } catch (IOException e) {
-            Logger.getInstance().log("Unable to create process for a worker!");
+//            Logger.getInstance().log("Unable to create process for a worker!");
             e.printStackTrace();
         }
     }
 
     private void listenToWorker(){
         while (true){
-            Logger2.getInstance().log("Waiting for worker answer...");
+//            Logger2.getInstance().log("Waiting for worker answer...");
             String message = scanner.nextLine();
-            Logger2.getInstance().log("Got a worker answer... " + message);
+//            Logger2.getInstance().log("Got a worker answer... " + message);
 
             responseFromWorker(message);
         }
