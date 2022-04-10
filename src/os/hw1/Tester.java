@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class Tester {
     public static final int WAIT_P1 = 1000;
     public static final int WAIT_P2 = 2000;
-    static final long SAFA_MARGIN = 300;
+    static final long SAFA_MARGIN = 5000;
     static final int port = 16543;
     static final int workerCount = 2;
     static final int w = 5;
@@ -89,9 +89,9 @@ public class Tester {
 
     static void assertTime(long actual, long expected) throws Exception {
         System.out.println(actual - expected);
-//        if (expected - SAFA_MARGIN > actual || actual > expected + SAFA_MARGIN) {
-//            throw new Exception("boom");
-//        }
+        if (expected - SAFA_MARGIN > actual || actual > expected + SAFA_MARGIN) {
+            throw new Exception("boom");
+        }
     }
 
     static void assertInt(int actual, int expected) throws Exception {

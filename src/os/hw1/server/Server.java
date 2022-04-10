@@ -4,6 +4,7 @@ import os.hw1.master.*;
 import os.hw1.util.Logger;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -21,6 +22,8 @@ public class Server {
     private List<ExecuteChain> processing;
 
     private Object chainsLock;
+
+    private int priority = 0;
 
     public Server(int mainPort, int numberOfWorkers, int maxW, int numberOfArgs, int numberOfPrograms,
                   List<String> commonArgs, List<Program> programs) {
@@ -41,7 +44,7 @@ public class Server {
 
     private void newQuery(Socket socket, String query){
         synchronized (chainsLock) {
-            requests.add(new ExecuteChain(getInputOfQuery(query), getQueueOfQuery(query), socket));
+            requests.add(new ExecuteChain(priority++, getInputOfQuery(query), getQueueOfQuery(query), socket));
         }
     }
 
@@ -76,10 +79,14 @@ public class Server {
             createInitialWorkers();
             startInitialWorkers();
 
+            Thread.sleep(100);
+
             listenForNewConnections();
 
+            Thread.sleep(100);
+
             startHandlingRequests();
-        } catch(IOException e) {
+        } catch(IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -115,7 +122,9 @@ public class Server {
 
     private void createInitialWorkers(){
         for(int i = 0; i < numberOfWorkers; i++){
-            workers.add(new WorkerHandler(this));
+//            int workerPort = mainPort + 1 + i;
+            WorkerHandler workerHandler = new WorkerHandler(i, this);
+            workers.add(workerHandler);
         }
     }
 
@@ -136,7 +145,7 @@ public class Server {
             handleRequest();
 
             try {
-                Thread.sleep(10); // TODO: is it correct?!
+                Thread.sleep(100); // TODO: is it correct?!
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

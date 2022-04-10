@@ -5,6 +5,9 @@ import os.hw1.util.Logger2;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Worker {
@@ -31,20 +34,12 @@ public class Worker {
             PrintStream printStream = new PrintStream(process.getOutputStream());
             Scanner scanner = new Scanner(process.getInputStream());
 
-//            Logger2.getInstance().log("This input: " + input + " is going into " + className);
-//            Logger.getInstance().log("This input: " + input + " is going into " + className);
             printStream.println(input);
             printStream.flush();
-//            Logger2.getInstance().log("This input: " + input + " went into " + className);
-//            Logger.getInstance().log("This input: " + input + " is going into " + className);
 
             int programOutput = scanner.nextInt();
-//            Logger2.getInstance().log("This input: " + programOutput + " came from " + className);
-
-//            Logger.getInstance().log("Program answered: " + programOutput);
 
             String response = programId + " " + input + " " + programOutput;
-//            Logger2.getInstance().log(response);
 
             return response;
         } catch (IOException e){
@@ -55,12 +50,22 @@ public class Worker {
     }
 
     public static void main(String[] args) {
-        while(true){
-            Scanner scanner = new Scanner(System.in);
-//            Logger.getInstance().log("Worker is sad:( ");
-            String request = scanner.nextLine();
-//            Logger.getInstance().log("Worker got: " + request);
-            System.out.println(newRequest(request));
+        Socket socket;
+        try {
+            socket = new Socket(InetAddress.getLocalHost(), MasterMain.workersPort);
+//            Logger2.getInstance().log("Port in worker side: " + MasterMain.workersPort);
+
+            Scanner scanner = new Scanner(socket.getInputStream());
+            PrintStream printStream = new PrintStream(socket.getOutputStream());
+
+            while(true){
+                String request = scanner.nextLine();
+
+                printStream = new PrintStream(socket.getOutputStream());
+                printStream.println(newRequest(request));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -10,9 +10,13 @@ public class ExecuteChain {
     private Socket returnSocket;
     private int currentInput;
 
+    private int priority;
+
     private PrintStream printStream;
 
-    public ExecuteChain(int input, Queue<Integer> idQueue, Socket socket){
+    public ExecuteChain(int priority, int input, Queue<Integer> idQueue, Socket socket){
+        this.priority = priority;
+
         returnSocket = socket;
         currentInput = input;
         programIds = idQueue;

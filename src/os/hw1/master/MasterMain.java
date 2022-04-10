@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class MasterMain {
-    public static int portNumber;
+    public static int portNumber, workersPort = 9812;
     private static int numberOfWorkers, w, numberOfArgs, numberOfPrograms;
     private static List<String> commonArgs = new ArrayList<>();
 
@@ -54,6 +54,8 @@ public class MasterMain {
     }
 
     public static void main(String[] args) {
+        Logger.getInstance().log("master start " + ProcessHandle.current().pid() + " " + portNumber);
+
         input();
         Server server = new Server(portNumber, numberOfWorkers, w, numberOfArgs,
                 numberOfPrograms, commonArgs, programs);

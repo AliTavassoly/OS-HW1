@@ -6,11 +6,13 @@ import os.hw1.util.Logger2;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class WorkerHandler {
-    int currentW;
+    int currentW, workerId;
+    long processId;
 
     private Scanner scanner;
     private PrintStream printStream;
@@ -18,8 +20,18 @@ public class WorkerHandler {
 
     private Server server;
 
-    public WorkerHandler(Server server){
+    private static ServerSocket serverSocket;
+
+    public WorkerHandler(int id, Server server){
+        this.workerId = id;
         this.server = server;
+
+        try {
+            if(serverSocket == null)
+                serverSocket = new ServerSocket(MasterMain.workersPort);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getCurrentW(){
@@ -38,8 +50,12 @@ public class WorkerHandler {
                     commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.master.Worker"
             ).start();
 
-            printStream = new PrintStream(process.getOutputStream());
-            scanner = new Scanner(process.getInputStream());
+            processId = process.pid();
+
+            Socket workerSocket = serverSocket.accept();
+
+            printStream = new PrintStream(workerSocket.getOutputStream());
+            scanner = new Scanner(workerSocket.getInputStream());
 
             listenToWorker();
         } catch (IOException e) {
@@ -49,13 +65,19 @@ public class WorkerHandler {
     }
 
     private void listenToWorker(){
-        while (true){
+        Thread listenerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true){
 //            Logger2.getInstance().log("Waiting for worker answer...");
-            String message = scanner.nextLine();
+                    String message = scanner.nextLine();
 //            Logger2.getInstance().log("Got a worker answer... " + message);
 
-            responseFromWorker(message);
-        }
+                    responseFromWorker(message);
+                }
+            }
+        });
+        listenerThread.start();
     }
 
     public void requestFromServer(Executable executable){
@@ -79,5 +101,9 @@ public class WorkerHandler {
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
 
         server.response(executable);
+    }
+
+    public long getProcessId(){
+        return processId;
     }
 }
