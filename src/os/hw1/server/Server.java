@@ -2,6 +2,7 @@ package os.hw1.server;
 
 import os.hw1.master.*;
 import os.hw1.util.ChainComparator;
+import os.hw1.util.Logger;
 import os.hw1.util.Logger2;
 
 import java.io.*;
@@ -78,14 +79,12 @@ public class Server {
         try {
             server = new ServerSocket(port);
 
-            System.out.println("Server Started (this message is for tester)");
-
             connectToCache();
 
             createInitialWorkers();
             startInitialWorkers();
 
-            Thread.sleep(100);
+            Thread.sleep(1000);
 
             listenForNewClients();
 
@@ -251,16 +250,14 @@ public class Server {
     }
 
     private void createCacheProcess(){
-        String[] commonArgs = {
-                "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
-                "-classpath",
-                "out/production/OS-HW1/"
-        };
+        String[] commonArgs = MasterMain.getCommonArgs();
 
         try {
             Process process = new ProcessBuilder(
                     commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.server.Cache"
             ).start();
+
+            Logger.getInstance().log("cache start " + process.pid() + " " + MasterMain.cachePort);
         } catch (IOException e){
             e.printStackTrace();
         }
@@ -279,8 +276,6 @@ public class Server {
             Socket clientSocket = new Socket(InetAddress.getLocalHost(), MasterMain.cachePort);
             cachePrintStream = new PrintStream(clientSocket.getOutputStream());
             cacheScanner = new Scanner(clientSocket.getInputStream());
-
-             cacheScanner.nextLine(); // read something to ensure it connected
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -308,4 +303,5 @@ public class Server {
         }
     }
 }
+
 

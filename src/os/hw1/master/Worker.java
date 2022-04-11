@@ -1,5 +1,6 @@
 package os.hw1.master;
 
+import os.hw1.util.Logger;
 import os.hw1.util.Logger2;
 
 import java.io.IOException;
@@ -9,19 +10,18 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Worker {
-
     private static String newRequest(String request){
         String[] parts = request.split(" ");
-        return runProgram(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), parts[2]);
+        String [] commonArgs = new String[3];
+
+        commonArgs[0] = parts[3];
+        commonArgs[1] = parts[4];
+        commonArgs[2] = parts[5];
+
+        return runProgram(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), parts[2], commonArgs);
     }
 
-    private static String runProgram(int programId, int input, String className){
-        String[] commonArgs = {
-                "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
-                "-classpath",
-                "out/production/OS-HW1/"
-        };
-
+    private static String runProgram(int programId, int input, String className, String[] commonArgs){
         try {
             Process process = new ProcessBuilder(
                     commonArgs[0], commonArgs[1], commonArgs[2], className
@@ -56,7 +56,10 @@ public class Worker {
             while(true){
                 String request = scanner.nextLine();
 
-                printStream.println(newRequest(request));
+                String response = newRequest(request);
+
+                printStream.println(response);
+                printStream.flush();
             }
         } catch (IOException e) {
             e.printStackTrace();

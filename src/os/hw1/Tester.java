@@ -106,7 +106,6 @@ public class Tester {
         }
     }
 
-
     public static void main(String[] args) throws Exception {
         Process process = runProcess();
         int a = 5;

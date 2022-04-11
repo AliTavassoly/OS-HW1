@@ -87,14 +87,10 @@ public class Cache {
             ServerSocket serverSocket;
 
             serverSocket = new ServerSocket(MasterMain.cachePort);
-            Logger.getInstance().log("cache start " + ProcessHandle.current().pid() + " " + MasterMain.cachePort);
 
             Socket clientSocket = serverSocket.accept();
             printStream = new PrintStream(clientSocket.getOutputStream());
             scanner = new Scanner(clientSocket.getInputStream());
-
-            printStream.println("Connected to cache");
-            printStream.flush();
 
             while (true){
                 String request = scanner.nextLine();

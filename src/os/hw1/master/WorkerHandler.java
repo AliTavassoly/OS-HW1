@@ -2,6 +2,7 @@ package os.hw1.master;
 
 import os.hw1.server.Server;
 import os.hw1.util.Logger;
+import os.hw1.util.Logger2;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -38,11 +39,7 @@ public class WorkerHandler {
     }
 
     public void start(){
-        String[] commonArgs = {
-                "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
-                "-classpath",
-                "out/production/OS-HW1/"
-        };
+        String[] commonArgs = MasterMain.getCommonArgs();
 
         try {
             process = new ProcessBuilder(
@@ -87,6 +84,12 @@ public class WorkerHandler {
         request += String.valueOf(executable.getInput());
         request += " ";
         request += MasterMain.getClassNameOfProgram(executable.getProgramId());
+        request += " ";
+        request += MasterMain.getCommonArgs()[0];
+        request += " ";
+        request += MasterMain.getCommonArgs()[1];
+        request += " ";
+        request += MasterMain.getCommonArgs()[2];
 
         printStream.println(request);
         printStream.flush();

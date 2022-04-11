@@ -33,8 +33,8 @@ public class Logger2 {
         createFile();
     }
 
-    public void log(String message){
-        pw.println(message);
-        pw.flush();
-    }
+//    public void log(String message){
+//        pw.println(message);
+//        pw.flush();
+//    }
 }

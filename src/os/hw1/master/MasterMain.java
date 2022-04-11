@@ -53,6 +53,13 @@ public class MasterMain {
         return "";
     }
 
+    public static String[] getCommonArgs(){
+        String ans[] = new String[commonArgs.size()];
+        for(int i = 0; i < commonArgs.size(); i++)
+            ans[i] = commonArgs.get(i);
+        return ans;
+    }
+
     public static void main(String[] args) {
         input();
 
