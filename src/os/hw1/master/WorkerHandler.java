@@ -14,6 +14,8 @@ public class WorkerHandler {
     int currentW, workerId, currentPort;
     long processId;
 
+    private String status = "stopped";
+
     private Scanner scanner;
     private PrintStream printStream;
     private Process process;
@@ -34,12 +36,17 @@ public class WorkerHandler {
         }
     }
 
+    public int getWorkerId(){
+        return workerId;
+    }
+
     public int getCurrentW(){
         return currentW;
     }
 
     public void start(){
         String[] commonArgs = MasterMain.getCommonArgs();
+        status = "running";
 
         try {
             process = new ProcessBuilder(
@@ -60,6 +67,7 @@ public class WorkerHandler {
             listenToWorker();
         } catch (IOException e) {
             Logger.getInstance().log("worker " + workerId + " stop " + processId + " " + currentPort);
+            stop();
             e.printStackTrace();
         }
     }
@@ -105,6 +113,10 @@ public class WorkerHandler {
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
 
         server.responseFromWorker(executable);
+    }
+
+    private void stop(){
+        status = "stopped";
     }
 
     public long getProcessId(){

@@ -145,6 +145,8 @@ public class Server {
 
             handleCacheResponses();
 
+            checkHealth();
+
             try {
                 Thread.sleep(100); // TODO: is it correct?!
             } catch (InterruptedException e) {
@@ -293,6 +295,10 @@ public class Server {
         cachePrintStream.flush();
 
         return cacheScanner.nextInt();
+    }
+
+    private void checkHealth(){
+
     }
 
     public void stop() {
