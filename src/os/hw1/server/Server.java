@@ -21,6 +21,7 @@ public class Server {
 
     private TreeSet<ExecuteChain> requests;
     private TreeSet<ExecuteChain> processing;
+    private List<ExecuteChain> inCacheChains;
 
     private Object chainsLock;
 
@@ -42,6 +43,7 @@ public class Server {
         workers = new LinkedList<>();
         requests = new TreeSet<ExecuteChain>(new ChainComparator());
         processing = new TreeSet<ExecuteChain>(new ChainComparator());
+        inCacheChains = new LinkedList<>();
 
         chainsLock = new Object();
     }
@@ -100,8 +102,6 @@ public class Server {
             @Override
             public void run() {
                 while (true) {
-//                    Logger.getInstance().log("Waiting for a client ...");
-
                     Socket clientSocket = null;
 
                     try {
@@ -123,7 +123,6 @@ public class Server {
 
     private void createInitialWorkers() {
         for (int i = 0; i < numberOfWorkers; i++) {
-//            int workerPort = mainPort + 1 + i;
             WorkerHandler workerHandler = new WorkerHandler(i, this);
             workers.add(workerHandler);
         }
@@ -145,11 +144,28 @@ public class Server {
         while (true) {
             handleRequest();
 
+            handleCacheResponses();
+
             try {
                 Thread.sleep(100); // TODO: is it correct?!
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void handleCacheResponses(){
+        synchronized (chainsLock){
+            for(ExecuteChain chain: inCacheChains){
+                chain.programAnswered(chain.getLastAnswer());
+
+                if (chain.isAlive()) {
+                    requests.add(chain);
+                } else {
+                    chain.sendResponseToClient(chain.getLastAnswer());
+                }
+            }
+            inCacheChains.clear();
         }
     }
 
@@ -166,7 +182,8 @@ public class Server {
                     if (existInCache(chain.getCurrentExecutable())) {
                         int answer = getFromCache(chain.getCurrentExecutable().getProgramId(), chain.getCurrentExecutable().getInput());
                         shouldAssign = false;
-                        // TODO: send response
+                        chain.setLastAnswer(answer);
+                        inCacheChains.add(chain);
                     } else { // check if task is already in processing list
                         for (ExecuteChain executeChain : processing) {
                             if (Executable.areEqual(executeChain.getCurrentExecutable(), chain.getCurrentExecutable())) {
@@ -210,7 +227,7 @@ public class Server {
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
     }
 
-    public void responseToProgram(Executable response) {
+    public void responseFromWorker(Executable response) {
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
         pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
 
@@ -250,8 +267,6 @@ public class Server {
     }
 
     private void connectToCache() {
-        Logger2.getInstance().log("Cache going to be called");
-
         createCacheProcess();
 
         try {
@@ -272,7 +287,7 @@ public class Server {
     }
 
     private void pushToCache(int programId, int input, int answer) {
-        String request = "GET " + programId + " " + input + " " + answer; // TODO: edit
+        String request = "PUSH " + programId + " " + input + " " + answer;
         cachePrintStream.println(request);
         cachePrintStream.flush();
     }

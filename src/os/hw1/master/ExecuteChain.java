@@ -10,6 +10,8 @@ public class ExecuteChain {
     private Socket returnSocket;
     private int currentInput;
 
+    private int lastAnswer;
+
     private int priority;
 
     private PrintStream printStream;
@@ -53,5 +55,13 @@ public class ExecuteChain {
 
     public int getPriority(){
         return priority;
+    }
+
+    public int getLastAnswer(){
+        return lastAnswer;
+    }
+
+    public void setLastAnswer(int answer){
+        lastAnswer = answer;
     }
 }

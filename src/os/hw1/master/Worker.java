@@ -12,13 +12,10 @@ public class Worker {
 
     private static String newRequest(String request){
         String[] parts = request.split(" ");
-        Logger2.getInstance().log(request);
         return runProgram(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), parts[2]);
     }
 
     private static String runProgram(int programId, int input, String className){
-//        Logger.getInstance().log("runProgram in worker: " + programId + " " + input + " " + className);
-
         String[] commonArgs = {
                 "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
                 "-classpath",

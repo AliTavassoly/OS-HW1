@@ -54,10 +54,10 @@ public class MasterMain {
     }
 
     public static void main(String[] args) {
-        Logger.getInstance().log("master start " + ProcessHandle.current().pid() + " " + portNumber);
-//        Logger.getInstance().log("cache start " + ProcessHandle.current().pid() + " " + portNumber);
-
         input();
+
+        Logger.getInstance().log("master start " + ProcessHandle.current().pid() + " " + portNumber);
+
         Server server = new Server(portNumber, numberOfWorkers, w, numberOfArgs,
                 numberOfPrograms, commonArgs, programs);
 

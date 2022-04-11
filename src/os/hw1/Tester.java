@@ -119,13 +119,13 @@ public class Tester {
         Future<Response> r3 = executorService.submit(() -> sendRequest(50, programs));
         Response result1 = r1.get();
         assertTime(result1.time, a * WAIT_P1);
-        assertInt(result1.output, 50);
+        assertInt(result1.output, 50 - a);
         Response result2 = r2.get();
         assertTime(result2.time, a * WAIT_P1 - 100);
-        assertInt(result2.output, 50);
+        assertInt(result2.output, 50 - a);
         Response result3 = r3.get();
         assertTime(result3.time, a * WAIT_P1 - 200);
-        assertInt(result3.output, 50);
+        assertInt(result3.output, 50 - a);
         System.out.println("pass phase 1");
 
         Future<Response> ra1 = executorService.submit(() -> sendRequest(10, 2));

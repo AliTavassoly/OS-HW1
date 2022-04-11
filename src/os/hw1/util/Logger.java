@@ -13,6 +13,6 @@ public class Logger {
 
     public void log(String message){
         System.out.println(message);
-        Logger2.getInstance().log(message);
+//        Logger2.getInstance().log(message);
     }
 }

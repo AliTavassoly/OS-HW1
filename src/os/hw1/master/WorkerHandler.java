@@ -101,7 +101,7 @@ public class WorkerHandler {
 
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
 
-        server.responseToProgram(executable);
+        server.responseFromWorker(executable);
     }
 
     public long getProcessId(){

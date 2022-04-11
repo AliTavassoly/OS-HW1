@@ -1,6 +1,7 @@
 package os.hw1.server;
 
 import os.hw1.master.MasterMain;
+import os.hw1.util.Logger;
 import os.hw1.util.Logger2;
 
 import java.io.IOException;
@@ -62,7 +63,6 @@ public class Cache {
 
     public static void newRequest(String request){
         String[] parts = request.split(" ");
-        Logger2.getInstance().log(request);
 
         String type = parts[0];
         int programId = Integer.parseInt(parts[1]);
@@ -81,14 +81,13 @@ public class Cache {
     }
 
     public static void main(String[] args) {
-        Logger2.getInstance().log("Cache started");
-
         list = new ArrayList<>();
 
         try {
             ServerSocket serverSocket;
 
             serverSocket = new ServerSocket(MasterMain.cachePort);
+            Logger.getInstance().log("cache start " + ProcessHandle.current().pid() + " " + MasterMain.cachePort);
 
             Socket clientSocket = serverSocket.accept();
             printStream = new PrintStream(clientSocket.getOutputStream());
