@@ -1,7 +1,8 @@
 package os.hw1.server;
 
 import os.hw1.master.*;
-import os.hw1.util.Logger;
+import os.hw1.util.ChainComparator;
+import os.hw1.util.Logger2;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -16,12 +17,15 @@ public class Server {
 
     private ServerSocket server;
 
-    private List<WorkerHandler> workers; // TODO: ???
+    private List<WorkerHandler> workers;
 
     private TreeSet<ExecuteChain> requests;
     private TreeSet<ExecuteChain> processing;
 
     private Object chainsLock;
+
+    private PrintStream cachePrintStream;
+    private Scanner cacheScanner;
 
     private int priority = 0;
 
@@ -36,62 +40,62 @@ public class Server {
         this.programs = programs;
 
         workers = new LinkedList<>();
-        requests = new TreeSet<ExecuteChain>(new chainComp());
-        processing = new TreeSet<ExecuteChain>(new chainComp());
+        requests = new TreeSet<ExecuteChain>(new ChainComparator());
+        processing = new TreeSet<ExecuteChain>(new ChainComparator());
 
         chainsLock = new Object();
     }
 
-    private void newQuery(Socket socket, String query){
+    private void newQuery(Socket socket, String query) {
         synchronized (chainsLock) {
             requests.add(new ExecuteChain(priority++, getInputOfQuery(query), getQueueOfQuery(query), socket));
         }
     }
 
-    private Queue<Integer> getQueueOfQuery(String query){
+    private Queue<Integer> getQueueOfQuery(String query) {
         String[] parts = query.split(" ");
         String chain = parts[0];
 
         String[] ids = chain.split("\\|");
         Queue<Integer> queue = new LinkedList<>();
 
-        for(int i = ids.length - 1; i >= 0; i--)
+        for (int i = ids.length - 1; i >= 0; i--)
             queue.add(Integer.parseInt(ids[i]));
         return queue;
     }
 
-    private int getInputOfQuery(String query){
+    private int getInputOfQuery(String query) {
         String[] parts = query.split(" ");
         String input = parts[1];
 
         return Integer.parseInt(input);
     }
 
-    public void start(int port){
+    public void start(int port) {
 
         try {
             server = new ServerSocket(port);
 
             System.out.println("Server Started (this message is for tester)");
 
-//            Logger.getInstance().log("Server started");
+            connectToCache();
 
             createInitialWorkers();
             startInitialWorkers();
 
             Thread.sleep(100);
 
-            listenForNewConnections();
+            listenForNewClients();
 
             Thread.sleep(100);
 
-            startHandlingRequests();
-        } catch(IOException | InterruptedException e) {
+            handleRequests();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private void listenForNewConnections() throws IOException {
+    private void listenForNewClients() throws IOException {
         Thread listeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -102,16 +106,13 @@ public class Server {
 
                     try {
                         clientSocket = server.accept();
-//                        Logger.getInstance().log("Client accepted");
 
                         Scanner inputStream = new Scanner(clientSocket.getInputStream());
-
-//                        Logger.getInstance().log("Start listening to client...:");
 
                         String line = inputStream.nextLine();
 
                         newQuery(clientSocket, line);
-                    } catch (IOException e){
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -120,16 +121,16 @@ public class Server {
         listeningThread.start();
     }
 
-    private void createInitialWorkers(){
-        for(int i = 0; i < numberOfWorkers; i++){
+    private void createInitialWorkers() {
+        for (int i = 0; i < numberOfWorkers; i++) {
 //            int workerPort = mainPort + 1 + i;
             WorkerHandler workerHandler = new WorkerHandler(i, this);
             workers.add(workerHandler);
         }
     }
 
-    private void startInitialWorkers(){
-        for(WorkerHandler workerHandler: workers){
+    private void startInitialWorkers() {
+        for (WorkerHandler workerHandler : workers) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -140,8 +141,8 @@ public class Server {
         }
     }
 
-    private void startHandlingRequests(){
-        while(true) {
+    private void handleRequests() {
+        while (true) {
             handleRequest();
 
             try {
@@ -152,7 +153,7 @@ public class Server {
         }
     }
 
-    private void handleRequest(){
+    private void handleRequest() {
         synchronized (chainsLock) {
             if (requests.size() > 0) {
                 ExecuteChain chain = requests.first();
@@ -160,53 +161,131 @@ public class Server {
 
                 if (canAssign(MasterMain.getWeightOfProgram(programId))) {
                     requests.pollFirst();
-                    processing.add(chain);
-                    process(chain);
+                    boolean shouldAssign = true;
+
+                    if (existInCache(chain.getCurrentExecutable())) {
+                        int answer = getFromCache(chain.getCurrentExecutable().getProgramId(), chain.getCurrentExecutable().getInput());
+                        shouldAssign = false;
+                        // TODO: send response
+                    } else { // check if task is already in processing list
+                        for (ExecuteChain executeChain : processing) {
+                            if (Executable.areEqual(executeChain.getCurrentExecutable(), chain.getCurrentExecutable())) {
+                                processing.add(chain);
+                                shouldAssign = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (shouldAssign) {
+                        processing.add(chain);
+                        assignToWorker(chain);
+                    }
                 }
             }
         }
     }
 
-    private boolean canAssign(int w){
-        for(WorkerHandler workerHandler: workers){
-            if(workerHandler.getCurrentW() + w <= maxW){
+    private boolean existInCache(Executable executable) {
+        int answer = getFromCache(executable.getProgramId(), executable.getInput());
+        return answer != -1;
+    }
+
+    private boolean canAssign(int w) {
+        for (WorkerHandler workerHandler : workers) {
+            if (workerHandler.getCurrentW() + w <= maxW) {
                 return true;
             }
         }
         return false;
     }
 
-    private void process(ExecuteChain chain){
+    private void assignToWorker(ExecuteChain chain) {
         WorkerHandler chosenWorker = null;
-        for(WorkerHandler workerHandler: workers){
-            if(chosenWorker == null || workerHandler.getCurrentW() < chosenWorker.getCurrentW()){
+        for (WorkerHandler workerHandler : workers) {
+            if (chosenWorker == null || workerHandler.getCurrentW() < chosenWorker.getCurrentW()) {
                 chosenWorker = workerHandler;
             }
         }
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
     }
 
-    public void response(Executable response){
+    public void responseToProgram(Executable response) {
+        List<ExecuteChain> chainsToRemove = new LinkedList<>();
+        pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
+
         synchronized (chainsLock) {
-            for (ExecuteChain chain: processing) {
-                if (chain.getCurrentExecutable().getProgramId() == response.getProgramId() &&
-                        chain.getCurrentExecutable().getInput() == response.getInput()) {
+            for (ExecuteChain chain : processing) {
+                if (Executable.areEqual(chain.getCurrentExecutable(), response)) {
                     chain.programAnswered(response.getAnswer());
-                    processing.remove(chain);
+                    chainsToRemove.add(chain);
+                }
+            }
+            for (ExecuteChain chain: chainsToRemove){
+                processing.remove(chain);
 
-                    if (chain.isAlive()) {
-                        requests.add(chain);
-                    } else {
-                        chain.sendResponseToClient(response.getAnswer());
-                    }
-
-                    return;
+                if (chain.isAlive()) {
+                    requests.add(chain);
+                } else {
+                    chain.sendResponseToClient(response.getAnswer());
                 }
             }
         }
     }
 
-    public void stop(){
+    private void createCacheProcess(){
+        String[] commonArgs = {
+                "C:\\Users\\Alico\\.jdks\\corretto-11.0.14.1\\bin\\java.exe",
+                "-classpath",
+                "out/production/OS-HW1/"
+        };
+
+        try {
+            Process process = new ProcessBuilder(
+                    commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.server.Cache"
+            ).start();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    private void connectToCache() {
+        Logger2.getInstance().log("Cache going to be called");
+
+        createCacheProcess();
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            Socket clientSocket = new Socket(InetAddress.getLocalHost(), MasterMain.cachePort);
+            cachePrintStream = new PrintStream(clientSocket.getOutputStream());
+            cacheScanner = new Scanner(clientSocket.getInputStream());
+
+             cacheScanner.nextLine(); // read something to ensure it connected
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void pushToCache(int programId, int input, int answer) {
+        String request = "GET " + programId + " " + input + " " + answer; // TODO: edit
+        cachePrintStream.println(request);
+        cachePrintStream.flush();
+    }
+
+    private int getFromCache(int programId, int input) {
+        String request = "GET " + programId + " " + input;
+        cachePrintStream.println(request);
+        cachePrintStream.flush();
+
+        return cacheScanner.nextInt();
+    }
+
+    public void stop() {
         try {
             server.close();
         } catch (IOException e) {
@@ -215,10 +294,3 @@ public class Server {
     }
 }
 
-class chainComp implements Comparator<ExecuteChain>
-{
-    public int compare(ExecuteChain c1, ExecuteChain c2)
-    {
-        return c1.getPriority() - c2.getPriority();
-    }
-}

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class MasterMain {
-    public static int portNumber, workersPort = 9812;
+    public static int portNumber, workersPort = 9812, cachePort = 3247;
     private static int numberOfWorkers, w, numberOfArgs, numberOfPrograms;
     private static List<String> commonArgs = new ArrayList<>();
 

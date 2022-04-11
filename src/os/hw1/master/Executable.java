@@ -40,4 +40,8 @@ public class Executable {
     public boolean isValid(){
         return programId >= 0;
     }
+
+    public static boolean areEqual(Executable a, Executable b){
+        return a.getInput() == b.getInput() && a.getProgramId() == b.getProgramId();
+    }
 }

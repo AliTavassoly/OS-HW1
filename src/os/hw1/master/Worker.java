@@ -1,19 +1,18 @@
 package os.hw1.master;
 
-import os.hw1.util.Logger;
 import os.hw1.util.Logger2;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Worker {
 
     private static String newRequest(String request){
         String[] parts = request.split(" ");
+        Logger2.getInstance().log(request);
         return runProgram(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), parts[2]);
     }
 
