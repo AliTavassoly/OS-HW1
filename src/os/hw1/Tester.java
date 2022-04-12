@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class Tester {
     public static final int WAIT_P1 = 1000;
     public static final int WAIT_P2 = 2000;
-    static final long SAFA_MARGIN = 5000;
+    static final long SAFA_MARGIN = 1500;
     static final int port = 16543;
     static final int workerCount = 2;
     static final int w = 5;
@@ -115,20 +115,20 @@ public class Tester {
 //        Error logger: New request: 1 50
 
 //        Arrays.fill(programs, 1);
-        Future<Response> r1 = executorService.submit(() -> sendRequest(50, 1, 1, 1));
+        Future<Response> r1 = executorService.submit(() -> sendRequest(30, 1, 1, 1));
         Thread.sleep(100);
-        Future<Response> r2 = executorService.submit(() -> sendRequest(50, 2, 1));
+        Future<Response> r2 = executorService.submit(() -> sendRequest(20, 1, 1, 1));
         Thread.sleep(100);
-        Future<Response> r3 = executorService.submit(() -> sendRequest(50, 1));
+        Future<Response> r3 = executorService.submit(() -> sendRequest(10, 1, 1));
         Response result1 = r1.get();
         assertTime(result1.time, a * WAIT_P1);
-        assertInt(result1.output, 50 - 3);
+        assertInt(result1.output, 30 - 3);
         Response result2 = r2.get();
         assertTime(result2.time, a * WAIT_P1 - 100);
-        assertInt(result2.output, 4);
+        assertInt(result2.output, 20 - 3);
         Response result3 = r3.get();
         assertTime(result3.time, a * WAIT_P1 - 200);
-        assertInt(result3.output, 50 - 1);
+        assertInt(result3.output, 10 - 2);
         System.out.println("pass phase 1");
 
 //        Future<Response> ra1 = executorService.submit(() -> sendRequest(10, 2));

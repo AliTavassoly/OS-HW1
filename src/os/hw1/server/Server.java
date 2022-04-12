@@ -17,12 +17,12 @@ public class Server {
     private List<Program> programs;
 
     private ServerSocket server;
+    private ServerSocket cacheServer;
 
     private List<WorkerHandler> workers;
 
     private TreeSet<ExecuteChain> requests;
     private TreeSet<ExecuteChain> processing;
-    private List<ExecuteChain> inCacheChains;
 
     private Object chainsLock;
 
@@ -44,16 +44,17 @@ public class Server {
         workers = new LinkedList<>();
         requests = new TreeSet<ExecuteChain>(new ChainComparator());
         processing = new TreeSet<ExecuteChain>(new ChainComparator());
-        inCacheChains = new LinkedList<>();
 
         chainsLock = new Object();
     }
 
     private void newQuery(Socket socket, String query) {
         synchronized (chainsLock) {
-            ErrorLogger.getInstance().log("Error logger: New request: " + query);
+            ErrorLogger.getInstance().log("Error logger: New request: " + query + " " + getWorkersWeights());
 
             requests.add(new ExecuteChain(priority++, getInputOfQuery(query), getQueueOfQuery(query), socket));
+
+            chainsLock.notifyAll();
         }
     }
 
@@ -137,52 +138,33 @@ public class Server {
 
     private void handleRequests() {
         while (true) {
+            ErrorLogger.getInstance().log("Is running");
             handleRequest();
-
-            handleCacheResponses();
-
-            checkHealth();
-
-            try {
-                Thread.sleep(100); // TODO: is it correct?!
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void handleCacheResponses() {
-        synchronized (chainsLock) {
-            for (ExecuteChain chain : inCacheChains) {
-                chain.programAnswered(chain.getLastAnswer());
-
-                if (chain.isAlive()) {
-                    requests.add(chain);
-                } else {
-                    chain.sendResponseToClient(chain.getLastAnswer());
-                }
-
-            }
-            inCacheChains.clear();
         }
     }
 
     private void handleRequest() {
-
         synchronized (chainsLock) {
+            boolean shouldAssign = true;
+
             if (requests.size() > 0) {
                 ExecuteChain chain = requests.first();
                 int programId = chain.getCurrentExecutable().getProgramId();
 
                 if (canAssign(MasterMain.getWeightOfProgram(programId))) {
                     requests.pollFirst();
-                    boolean shouldAssign = true;
 
                     if (existInCache(chain.getCurrentExecutable())) {
                         int answer = getFromCache(chain.getCurrentExecutable().getProgramId(), chain.getCurrentExecutable().getInput());
                         shouldAssign = false;
                         chain.setLastAnswer(answer);
-                        inCacheChains.add(chain);
+                        chain.programAnswered(chain.getLastAnswer());
+
+                        if (chain.isAlive()) {
+                            requests.add(chain);
+                        } else {
+                            chain.sendResponseToClient(chain.getLastAnswer());
+                        }
                     } else { // check if task is already in processing list
                         for (ExecuteChain executeChain : processing) {
                             if (Executable.areEqual(executeChain.getCurrentExecutable(), chain.getCurrentExecutable())) {
@@ -197,6 +179,19 @@ public class Server {
                         processing.add(chain);
                         assignToWorker(chain);
                     }
+                } else {
+                    try {
+                        chainsLock.wait();
+                        return;
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                try {
+                    chainsLock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -217,7 +212,7 @@ public class Server {
     }
 
     private void assignToWorker(ExecuteChain chain) {
-        ErrorLogger.getInstance().log("Error logger: Start assigning...");
+//        ErrorLogger.getInstance().log("Error logger: Start assigning...");
 
         WorkerHandler chosenWorker = null;
         for (WorkerHandler workerHandler : workers) {
@@ -226,17 +221,19 @@ public class Server {
             }
         }
 
-        ErrorLogger.getInstance().log("Error logger: Assigned to: " + chosenWorker.getWorkerId() + " others weight: " + getWorkersWeights());
+        ErrorLogger.getInstance().log("Error logger: before Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
 
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
+
+        ErrorLogger.getInstance().log("Error logger: after Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
     }
 
     public void responseFromWorker(Executable response, int workerId) {
+        ErrorLogger.getInstance().log("Error logger: start response from worker: ProgramId: " + response.getProgramId() +
+              " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
+
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
         pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
-
-        ErrorLogger.getInstance().log("Error logger: response from worker: ProgramId: " + response.getProgramId() +
-                " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
 
         synchronized (chainsLock) {
             for (ExecuteChain chain : processing) {
@@ -254,6 +251,8 @@ public class Server {
                     chain.sendResponseToClient(response.getAnswer());
                 }
             }
+
+            chainsLock.notifyAll();
         }
     }
 
@@ -272,18 +271,14 @@ public class Server {
     }
 
     private void connectToCache() {
-        createCacheProcess();
-
         try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            cacheServer = new ServerSocket(MasterMain.cachePort);
 
-        try {
-            Socket clientSocket = new Socket(InetAddress.getLocalHost(), MasterMain.cachePort);
-            cachePrintStream = new PrintStream(clientSocket.getOutputStream());
-            cacheScanner = new Scanner(clientSocket.getInputStream());
+            createCacheProcess();
+
+            Socket cacheSocket = cacheServer.accept();
+            cachePrintStream = new PrintStream(cacheSocket.getOutputStream());
+            cacheScanner = new Scanner(cacheSocket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }

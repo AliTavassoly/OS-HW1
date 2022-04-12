@@ -4,6 +4,7 @@ import os.hw1.master.MasterMain;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -82,11 +83,8 @@ public class Cache {
         list = new ArrayList<>();
 
         try {
-            ServerSocket serverSocket;
+            Socket clientSocket = new Socket(InetAddress.getLocalHost(), MasterMain.cachePort);
 
-            serverSocket = new ServerSocket(MasterMain.cachePort);
-
-            Socket clientSocket = serverSocket.accept();
             printStream = new PrintStream(clientSocket.getOutputStream());
             scanner = new Scanner(clientSocket.getInputStream());
 

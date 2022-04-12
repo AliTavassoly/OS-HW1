@@ -65,4 +65,13 @@ public class ExecuteChain {
     public void setLastAnswer(int answer){
         lastAnswer = answer;
     }
+
+    @Override
+    public String toString() {
+        return "ExecuteChain{" +
+                "programIds=" + programIds +
+                ", currentInput=" + currentInput +
+                ", lastAnswer=" + lastAnswer +
+                '}';
+    }
 }

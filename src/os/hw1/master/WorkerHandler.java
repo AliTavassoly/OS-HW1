@@ -99,6 +99,12 @@ public class WorkerHandler {
         request += " ";
         request += MasterMain.getCommonArgs()[2];
 
+        try {
+            ErrorLogger.getInstance().log("Error logger: request from server in worker with id: " + request.substring(0, 10)); // TODO: print request has bug
+        } catch (Exception e){
+            ErrorLogger.getInstance().log(e.getMessage());
+        }
+
         printStream.println(request);
         printStream.flush();
 
@@ -111,6 +117,8 @@ public class WorkerHandler {
         Executable executable = new Executable(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
+
+//        ErrorLogger.getInstance().log("Error logger: response to server in worker with id: " + workerId);
 
         server.responseFromWorker(executable, workerId);
     }

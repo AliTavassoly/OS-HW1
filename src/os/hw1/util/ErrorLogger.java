@@ -9,6 +9,8 @@ public class ErrorLogger {
     private static ErrorLogger instance;
     private PrintWriter pw;
 
+    public static int isDebug = 0;
+
     public static ErrorLogger getInstance(){
         if(instance == null)
             return instance = new ErrorLogger();
@@ -34,8 +36,10 @@ public class ErrorLogger {
     }
 
     public void log(String message){
-//        pw.println(message);
-//        pw.flush();
+        if(isDebug == 1) {
+            pw.println(message);
+            pw.flush();
+        }
         System.err.println(message);
     }
 }

@@ -44,4 +44,13 @@ public class Executable {
     public static boolean areEqual(Executable a, Executable b){
         return a.getInput() == b.getInput() && a.getProgramId() == b.getProgramId();
     }
+
+    @Override
+    public String toString() {
+        return "Executable{" +
+                "programId=" + programId +
+                ", input=" + input +
+                ", answer=" + answer +
+                '}';
+    }
 }
