@@ -3,7 +3,7 @@ package os.hw1.server;
 import os.hw1.master.*;
 import os.hw1.util.ChainComparator;
 import os.hw1.util.Logger;
-import os.hw1.util.Logger2;
+import os.hw1.util.ErrorLogger;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -51,6 +51,8 @@ public class Server {
 
     private void newQuery(Socket socket, String query) {
         synchronized (chainsLock) {
+            ErrorLogger.getInstance().log("Error logger: New request: " + query);
+
             requests.add(new ExecuteChain(priority++, getInputOfQuery(query), getQueueOfQuery(query), socket));
         }
     }
@@ -75,16 +77,18 @@ public class Server {
     }
 
     public void start(int port) {
+        ErrorLogger.getInstance().log("Error logger: Start server 1...");
 
         try {
+            ErrorLogger.getInstance().log("Error logger: Start server 2... " + port);
+
             server = new ServerSocket(port);
+            ErrorLogger.getInstance().log("Error logger: Start server 3... " + port);
 
             connectToCache();
 
             createInitialWorkers();
             startInitialWorkers();
-
-            Thread.sleep(1000);
 
             listenForNewClients();
 
@@ -129,13 +133,7 @@ public class Server {
 
     private void startInitialWorkers() {
         for (WorkerHandler workerHandler : workers) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    workerHandler.start();
-                }
-            });
-            thread.start();
+            workerHandler.start();
         }
     }
 
@@ -155,9 +153,9 @@ public class Server {
         }
     }
 
-    private void handleCacheResponses(){
-        synchronized (chainsLock){
-            for(ExecuteChain chain: inCacheChains){
+    private void handleCacheResponses() {
+        synchronized (chainsLock) {
+            for (ExecuteChain chain : inCacheChains) {
                 chain.programAnswered(chain.getLastAnswer());
 
                 if (chain.isAlive()) {
@@ -165,12 +163,14 @@ public class Server {
                 } else {
                     chain.sendResponseToClient(chain.getLastAnswer());
                 }
+
             }
             inCacheChains.clear();
         }
     }
 
     private void handleRequest() {
+
         synchronized (chainsLock) {
             if (requests.size() > 0) {
                 ExecuteChain chain = requests.first();
@@ -219,12 +219,17 @@ public class Server {
     }
 
     private void assignToWorker(ExecuteChain chain) {
+        ErrorLogger.getInstance().log("Error logger: Start assigning...");
+
         WorkerHandler chosenWorker = null;
         for (WorkerHandler workerHandler : workers) {
             if (chosenWorker == null || workerHandler.getCurrentW() < chosenWorker.getCurrentW()) {
                 chosenWorker = workerHandler;
             }
         }
+
+        ErrorLogger.getInstance().log("Error logger: Assigned to: " + chosenWorker.getWorkerId());
+
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
     }
 
@@ -239,7 +244,7 @@ public class Server {
                     chainsToRemove.add(chain);
                 }
             }
-            for (ExecuteChain chain: chainsToRemove){
+            for (ExecuteChain chain : chainsToRemove) {
                 processing.remove(chain);
 
                 if (chain.isAlive()) {
@@ -251,7 +256,7 @@ public class Server {
         }
     }
 
-    private void createCacheProcess(){
+    private void createCacheProcess() {
         String[] commonArgs = MasterMain.getCommonArgs();
 
         try {
@@ -260,7 +265,7 @@ public class Server {
             ).start();
 
             Logger.getInstance().log("cache start " + process.pid() + " " + MasterMain.cachePort);
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -297,8 +302,14 @@ public class Server {
         return cacheScanner.nextInt();
     }
 
-    private void checkHealth(){
+    private void checkHealth() {
+//        ErrorLogger.getInstance().log("Size of processing: " + processing.size());
+    }
 
+    public void shutdownHook() {
+        // TODO: ???
+
+        stop();
     }
 
     public void stop() {

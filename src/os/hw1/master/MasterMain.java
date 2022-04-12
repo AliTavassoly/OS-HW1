@@ -1,6 +1,7 @@
 package os.hw1.master;
 
 import os.hw1.server.Server;
+import os.hw1.util.ErrorLogger;
 import os.hw1.util.Logger;
 
 import java.util.ArrayList;
@@ -70,6 +71,11 @@ public class MasterMain {
 
         server.start(portNumber);
 
-        // TODO: shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // server.shutdownHook();
+            }
+        }));
     }
 }

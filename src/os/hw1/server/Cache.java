@@ -1,8 +1,6 @@
 package os.hw1.server;
 
 import os.hw1.master.MasterMain;
-import os.hw1.util.Logger;
-import os.hw1.util.Logger2;
 
 import java.io.IOException;
 import java.io.PrintStream;

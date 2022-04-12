@@ -5,13 +5,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-public class Logger2 {
-    private static Logger2 instance;
+public class ErrorLogger {
+    private static ErrorLogger instance;
     private PrintWriter pw;
 
-    public static Logger2 getInstance(){
+    public static ErrorLogger getInstance(){
         if(instance == null)
-            return instance = new Logger2();
+            return instance = new ErrorLogger();
         return instance;
     }
 
@@ -29,12 +29,13 @@ public class Logger2 {
         }
     }
 
-    private Logger2(){
+    private ErrorLogger(){
         createFile();
     }
 
-//    public void log(String message){
-//        pw.println(message);
-//        pw.flush();
-//    }
+    public void log(String message){
+        pw.println(message);
+        pw.flush();
+        System.err.println(message);
+    }
 }

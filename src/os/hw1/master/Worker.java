@@ -1,7 +1,6 @@
 package os.hw1.master;
 
-import os.hw1.util.Logger;
-import os.hw1.util.Logger2;
+import os.hw1.util.ErrorLogger;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -55,6 +54,8 @@ public class Worker {
 
             while(true){
                 String request = scanner.nextLine();
+
+                ErrorLogger.getInstance().log("Error logger in worker: new request: " + request);
 
                 String response = newRequest(request);
 

@@ -47,6 +47,7 @@ public class ExecuteChain {
 
     public void sendResponseToClient(int answer){
         printStream.println(answer);
+        printStream.flush();
     }
 
     public boolean isAlive(){

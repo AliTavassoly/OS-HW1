@@ -109,39 +109,43 @@ public class Tester {
     public static void main(String[] args) throws Exception {
         Process process = runProcess();
         int a = 5;
-        int[] programs = new int[a];
-        Arrays.fill(programs, 1);
-        Future<Response> r1 = executorService.submit(() -> sendRequest(50, programs));
+
+//        Error logger: New request: 1|1|1 50
+//        Error logger: New request: 2|1 50
+//        Error logger: New request: 1 50
+
+//        Arrays.fill(programs, 1);
+        Future<Response> r1 = executorService.submit(() -> sendRequest(50, 1, 1, 1));
         Thread.sleep(100);
-        Future<Response> r2 = executorService.submit(() -> sendRequest(50, programs));
+        Future<Response> r2 = executorService.submit(() -> sendRequest(50, 2, 1));
         Thread.sleep(100);
-        Future<Response> r3 = executorService.submit(() -> sendRequest(50, programs));
+        Future<Response> r3 = executorService.submit(() -> sendRequest(50, 1));
         Response result1 = r1.get();
         assertTime(result1.time, a * WAIT_P1);
-        assertInt(result1.output, 50 - a);
+        assertInt(result1.output, 50 - 3);
         Response result2 = r2.get();
         assertTime(result2.time, a * WAIT_P1 - 100);
-        assertInt(result2.output, 50 - a);
+        assertInt(result2.output, 4);
         Response result3 = r3.get();
         assertTime(result3.time, a * WAIT_P1 - 200);
-        assertInt(result3.output, 50 - a);
+        assertInt(result3.output, 50 - 1);
         System.out.println("pass phase 1");
 
-        Future<Response> ra1 = executorService.submit(() -> sendRequest(10, 2));
-        Thread.sleep(50);
-        Future<Response> ra2 = executorService.submit(() -> sendRequest(13, 2));
-        Thread.sleep(50);
-        Future<Response> ra3 = executorService.submit(() -> sendRequest(17, 2));
-        Response resulta1 = ra1.get();
-        assertTime(resulta1.time, WAIT_P2);
-        assertInt(resulta1.output, 0);
-        Response resulta2 = ra2.get();
-        assertTime(resulta2.time, WAIT_P2);
-        assertInt(resulta2.output, 1);
-        Response resulta3 = ra3.get();
-        assertTime(resulta3.time, 2 * WAIT_P2);
-        assertInt(resulta3.output, 3);
-        System.out.println("phase 2 done");
+//        Future<Response> ra1 = executorService.submit(() -> sendRequest(10, 2));
+//        Thread.sleep(50);
+//        Future<Response> ra2 = executorService.submit(() -> sendRequest(13, 2));
+//        Thread.sleep(50);
+//        Future<Response> ra3 = executorService.submit(() -> sendRequest(17, 2));
+//        Response resulta1 = ra1.get();
+//        assertTime(resulta1.time, WAIT_P2);
+//        assertInt(resulta1.output, 0);
+//        Response resulta2 = ra2.get();
+//        assertTime(resulta2.time, WAIT_P2);
+//        assertInt(resulta2.output, 1);
+//        Response resulta3 = ra3.get();
+//        assertTime(resulta3.time, 2 * WAIT_P2);
+//        assertInt(resulta3.output, 3);
+//        System.out.println("phase 2 done");
         process.destroy();
         process.waitFor();
         executorService.shutdown();
