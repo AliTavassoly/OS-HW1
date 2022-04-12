@@ -34,8 +34,8 @@ public class ErrorLogger {
     }
 
     public void log(String message){
-        pw.println(message);
-        pw.flush();
+//        pw.println(message);
+//        pw.flush();
         System.err.println(message);
     }
 }

@@ -112,7 +112,7 @@ public class WorkerHandler {
 
         currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
 
-        server.responseFromWorker(executable);
+        server.responseFromWorker(executable, workerId);
     }
 
     private void stop(){

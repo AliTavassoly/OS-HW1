@@ -92,10 +92,8 @@ public class Server {
 
             listenForNewClients();
 
-            Thread.sleep(100);
-
             handleRequests();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -228,14 +226,17 @@ public class Server {
             }
         }
 
-        ErrorLogger.getInstance().log("Error logger: Assigned to: " + chosenWorker.getWorkerId());
+        ErrorLogger.getInstance().log("Error logger: Assigned to: " + chosenWorker.getWorkerId() + " others weight: " + getWorkersWeights());
 
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
     }
 
-    public void responseFromWorker(Executable response) {
+    public void responseFromWorker(Executable response, int workerId) {
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
         pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
+
+        ErrorLogger.getInstance().log("Error logger: response from worker: ProgramId: " + response.getProgramId() +
+                " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
 
         synchronized (chainsLock) {
             for (ExecuteChain chain : processing) {
@@ -304,6 +305,14 @@ public class Server {
 
     private void checkHealth() {
 //        ErrorLogger.getInstance().log("Size of processing: " + processing.size());
+    }
+
+    private String getWorkersWeights(){
+        String s = "";
+        for(WorkerHandler workerHandler: workers){
+            s += workerHandler.getCurrentW() + " ";
+        }
+        return s;
     }
 
     public void shutdownHook() {
