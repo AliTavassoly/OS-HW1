@@ -10,7 +10,7 @@ public class ErrorLogger {
     private static ErrorLogger instance;
     private PrintWriter pw;
 
-    public static int isDebug = 0;
+    public static int isDebug = 1;
 
     public static ErrorLogger getInstance(){
         if(instance == null)

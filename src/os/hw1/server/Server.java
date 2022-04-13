@@ -182,7 +182,7 @@ public class Server {
                     assignToWorker(chain);
                 }
 
-                if(!oneRequestHandled) {
+                if (!oneRequestHandled) {
                     try {
                         chainsLock.wait();
                         return;
@@ -229,7 +229,7 @@ public class Server {
 
     public void responseFromWorker(WorkerHandler workerHandler, Executable response, int workerId) {
         ErrorLogger.getInstance().log("Response from worker: ProgramId: " + response.getProgramId() +
-              " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
+                " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
 
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
         pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
@@ -302,16 +302,18 @@ public class Server {
     private void checkHealth() {
     }
 
-    private String getWorkersWeights(){
+    private String getWorkersWeights() {
         String s = "";
-        for(WorkerHandler workerHandler: workers){
+        for (WorkerHandler workerHandler : workers) {
             s += workerHandler.getCurrentW() + " ";
         }
         return s;
     }
 
     public void shutdownHook() {
-        // TODO: ???
+        for (WorkerHandler workerHandler : workers) {
+            workerHandler.shutDownHook();
+        }
 
         stop();
     }
@@ -321,6 +323,29 @@ public class Server {
             server.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void workerStopped(int workerId) {
+        for (WorkerHandler workerHandler : workers) {
+            if (workerHandler.getWorkerId() == workerId) {
+                synchronized (chainsLock) {
+                    List<ExecuteChain> removeFromProcessing = new LinkedList<>();
+                    for (ExecuteChain executeChain : processing) {
+                        if (workerHandler.isInProcessing(executeChain.getCurrentExecutable())) {
+                            removeFromProcessing.add(executeChain);
+                        }
+                    }
+
+                    for (ExecuteChain executeChain : removeFromProcessing) {
+                        processing.remove(executeChain);
+                        requests.add(executeChain);
+                    }
+
+                    workerHandler.start();
+                    break;
+                }
+            }
         }
     }
 }

@@ -83,7 +83,7 @@ public class MasterMain {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-                // server.shutdownHook();
+                server.shutdownHook();
             }
         }));
     }

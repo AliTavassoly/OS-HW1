@@ -8,13 +8,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class WorkerHandler {
     int currentW, workerId, currentPort;
     long processId;
-
-    private String status = "stopped";
 
     private Scanner scanner;
     private PrintStream printStream;
@@ -22,11 +23,15 @@ public class WorkerHandler {
 
     private Server server;
 
+    private List<Executable> executing;
+
     private static ServerSocket serverSocket;
 
     public WorkerHandler(int id, Server server){
         this.workerId = id;
         this.server = server;
+
+        executing = new LinkedList<>();
 
         try {
             if(serverSocket == null)
@@ -45,8 +50,10 @@ public class WorkerHandler {
     }
 
     public void start(){
+        Logger.getInstance().log("worker start starting again " + workerId);
+
         String[] commonArgs = MasterMain.getCommonArgs();
-        status = "running";
+        executing.clear();
 
         try {
             process = new ProcessBuilder(
@@ -64,22 +71,25 @@ public class WorkerHandler {
             printStream = new PrintStream(workerSocket.getOutputStream());
             scanner = new Scanner(workerSocket.getInputStream());
 
-            listenToWorker();
+            listenToWorker(workerSocket);
         } catch (IOException e) {
-            Logger.getInstance().log("worker " + workerId + " stop " + processId + " " + currentPort);
-            stop();
             e.printStackTrace();
         }
     }
 
-    private void listenToWorker(){
+    private void listenToWorker(Socket socket){
         Thread listenerThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (true){
-                    String message = scanner.nextLine();
+                try {
+                    while (true) {
+                        String message = scanner.nextLine();
 
-                    responseFromWorker(message);
+                        responseFromWorker(message);
+                    }
+                } catch (NoSuchElementException e){
+                    Logger.getInstance().log("worker " + workerId + " stop " + processId + " " + currentPort);
+                    WorkerHandler.this.stop();
                 }
             }
         });
@@ -105,6 +115,8 @@ public class WorkerHandler {
             ErrorLogger.getInstance().log(e.getMessage());
         }
 
+        executing.add(executable);
+
         printStream.println(request);
         printStream.flush();
 
@@ -116,18 +128,41 @@ public class WorkerHandler {
 
         Executable executable = new Executable(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 
+        removeFromList(executable);
+
         server.responseFromWorker(this, executable, workerId);
+    }
+
+    private void removeFromList(Executable toRemove){
+        for(Executable executable: executing){
+            if(Executable.areEqual(executable, toRemove)){
+                executing.remove(executable);
+                return;
+            }
+        }
     }
 
     public void updateWeight(int programId){
         currentW -= MasterMain.getWeightOfProgram(programId);
     }
 
+    public boolean isInProcessing(Executable executable){
+        for(Executable processing: executing){
+            if(Executable.areEqual(executable, processing))
+                return true;
+        }
+        return false;
+    }
+
     private void stop(){
-        status = "stopped";
+        server.workerStopped(workerId);
     }
 
     public long getProcessId(){
         return processId;
+    }
+
+    public void shutDownHook() {
+        process.destroy();
     }
 }

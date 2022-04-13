@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Worker {
     static Scanner scanner;
     static PrintStream printStream;
+
+    static List<Process> processList;
 
     private static void newRequest(String request){
         String[] parts = request.split(" ");
@@ -29,6 +33,8 @@ public class Worker {
             Process process = new ProcessBuilder(
                     commonArgs[0], commonArgs[1], commonArgs[2], className
             ).start();
+            processList.add(process);
+            ErrorLogger.getInstance().log("New program creating...: " + ProcessHandle.current().pid());
 
             PrintStream printStream = new PrintStream(process.getOutputStream());
             Scanner scanner = new Scanner(process.getInputStream());
@@ -59,6 +65,8 @@ public class Worker {
     }
 
     public static void main(String[] args) {
+        processList = new LinkedList<>();
+
         Socket socket;
         try {
             socket = new Socket(InetAddress.getLocalHost(), MasterMain.workersPort);
@@ -70,9 +78,23 @@ public class Worker {
                 String request = scanner.nextLine();
 
                 newRequest(request);
+
+                ErrorLogger.getInstance().log("Request in worker: process id: " + ProcessHandle.current().pid() + " size of process: " + processList.size());
+                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " +
+                        ProcessHandle.current().children().collect(Collectors.toList()).get(0).info());
+                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " +
+                        ProcessHandle.current().children().collect(Collectors.toList()).get(1).info());
+
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            ErrorLogger.getInstance().log("worker destroyed...");
+            for(Process process: processList){
+                process.destroy();
+            }
+        }));
     }
 }
