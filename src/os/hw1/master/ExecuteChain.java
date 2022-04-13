@@ -1,5 +1,7 @@
 package os.hw1.master;
 
+import os.hw1.util.ErrorLogger;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -46,6 +48,8 @@ public class ExecuteChain {
     }
 
     public void sendResponseToClient(int answer){
+        ErrorLogger.getInstance().log("sending result to client:   answer: " + answer);
+
         printStream.println(answer);
         printStream.flush();
     }

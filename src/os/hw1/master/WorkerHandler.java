@@ -100,7 +100,7 @@ public class WorkerHandler {
         request += MasterMain.getCommonArgs()[2];
 
         try {
-            ErrorLogger.getInstance().log("Error logger: request from server in worker with id: " + request.substring(0, 10)); // TODO: print request has bug
+            ErrorLogger.getInstance().log("request from server in worker with id: " + request.substring(0, 10)); // TODO: print request has bug
         } catch (Exception e){
             ErrorLogger.getInstance().log(e.getMessage());
         }

@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 
 public class ErrorLogger {
     private static ErrorLogger instance;
@@ -37,9 +38,9 @@ public class ErrorLogger {
 
     public void log(String message){
         if(isDebug == 1) {
-            pw.println(message);
+            pw.println("Error logger:    " + message + " @ " + new Date().getTime());
             pw.flush();
         }
-        System.err.println(message);
+        System.err.println("Error logger:    " + message);
     }
 }
