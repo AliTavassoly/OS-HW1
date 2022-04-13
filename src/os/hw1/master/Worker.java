@@ -36,8 +36,6 @@ public class Worker {
             printStream.println(input);
             printStream.flush();
 
-            ErrorLogger.getInstance().log("in worker: sent request to program" + new Date().getTime());
-
             Thread listeningThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -45,8 +43,6 @@ public class Worker {
                 }
             });
             listeningThread.start();
-
-            ErrorLogger.getInstance().log("in worker: received request from program" + new Date().getTime());
         } catch (IOException e){
             e.printStackTrace();
         }

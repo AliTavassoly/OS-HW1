@@ -116,11 +116,11 @@ public class WorkerHandler {
 
         Executable executable = new Executable(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 
-        currentW -= MasterMain.getWeightOfProgram(executable.getProgramId());
+        server.responseFromWorker(this, executable, workerId);
+    }
 
-//        ErrorLogger.getInstance().log("Error logger: response to server in worker with id: " + workerId);
-
-        server.responseFromWorker(executable, workerId);
+    public void updateWeight(int programId){
+        currentW -= MasterMain.getWeightOfProgram(programId);
     }
 
     private void stop(){

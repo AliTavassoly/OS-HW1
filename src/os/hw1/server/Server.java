@@ -6,7 +6,6 @@ import os.hw1.util.Logger;
 import os.hw1.util.ErrorLogger;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -78,13 +77,8 @@ public class Server {
     }
 
     public void start(int port) {
-        ErrorLogger.getInstance().log("Start server 1...");
-
         try {
-            ErrorLogger.getInstance().log("Start server 2... " + port);
-
             server = new ServerSocket(port);
-            ErrorLogger.getInstance().log("Start server 3... " + port);
 
             connectToCache();
 
@@ -138,7 +132,6 @@ public class Server {
 
     private void handleRequests() {
         while (true) {
-            ErrorLogger.getInstance().log("Is running");
             handleRequest();
         }
     }
@@ -222,8 +215,6 @@ public class Server {
     }
 
     private void assignToWorker(ExecuteChain chain) {
-//        ErrorLogger.getInstance().log("Error logger: Start assigning...");
-
         WorkerHandler chosenWorker = null;
         for (WorkerHandler workerHandler : workers) {
             if (chosenWorker == null || workerHandler.getCurrentW() < chosenWorker.getCurrentW()) {
@@ -231,15 +222,13 @@ public class Server {
             }
         }
 
-        ErrorLogger.getInstance().log("before Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
-
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
 
-        ErrorLogger.getInstance().log("after Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
+        ErrorLogger.getInstance().log("Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
     }
 
-    public void responseFromWorker(Executable response, int workerId) {
-        ErrorLogger.getInstance().log("start response from worker: ProgramId: " + response.getProgramId() +
+    public void responseFromWorker(WorkerHandler workerHandler, Executable response, int workerId) {
+        ErrorLogger.getInstance().log("Response from worker: ProgramId: " + response.getProgramId() +
               " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
 
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
@@ -261,6 +250,8 @@ public class Server {
                     chain.sendResponseToClient(response.getAnswer());
                 }
             }
+
+            workerHandler.updateWeight(response.getProgramId());
 
             chainsLock.notifyAll();
         }
@@ -309,7 +300,6 @@ public class Server {
     }
 
     private void checkHealth() {
-//        ErrorLogger.getInstance().log("Size of processing: " + processing.size());
     }
 
     private String getWorkersWeights(){
