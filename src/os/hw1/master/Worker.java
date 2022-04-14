@@ -93,7 +93,6 @@ public class Worker {
                 newRequest(request);
 
                 ErrorLogger.getInstance().log("Request in worker: process id: " + ProcessHandle.current().pid() + " size of process: " + processList.size());
-                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " + ProcessHandle.current().children().collect(Collectors.toList()));
 
             }
         } catch (IOException e) {

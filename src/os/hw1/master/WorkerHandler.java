@@ -63,9 +63,6 @@ public class WorkerHandler {
                     commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.master.Worker"
             ).start();
 
-            ErrorLogger.getInstance().log("Children: " + process.pid() + " " + process.children().count() + " " +
-                    process.children().collect(Collectors.toList()));
-
             processId = process.pid();
 
             workerSocket = serverSocket.accept();
@@ -179,5 +176,13 @@ public class WorkerHandler {
 
     public void shutDownHook() {
         process.destroy();
+        try {
+            if(workerSocket != null) {
+                workerSocket.close();
+                workerSocket = null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
