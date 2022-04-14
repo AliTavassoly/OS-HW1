@@ -71,6 +71,7 @@ public class MasterMain {
     }
 
     public static void main(String[] args) {
+
         input();
 
         Logger.getInstance().log("master start " + ProcessHandle.current().pid() + " " + portNumber);
@@ -78,13 +79,14 @@ public class MasterMain {
         Server server = new Server(portNumber, numberOfWorkers, w, numberOfArgs,
                 numberOfPrograms, commonArgs, programs);
 
-        server.start(portNumber);
-
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
                 server.shutdownHook();
+                Logger.getInstance().log("master stop " + ProcessHandle.current().pid() + " " + portNumber);
             }
         }));
+
+        server.start(portNumber);
     }
 }

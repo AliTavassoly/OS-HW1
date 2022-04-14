@@ -15,6 +15,8 @@ public class Worker {
     static Scanner scanner;
     static PrintStream printStream;
 
+    static Socket socket;
+
     static List<Process> processList;
 
     private static void newRequest(String request){
@@ -67,7 +69,18 @@ public class Worker {
     public static void main(String[] args) {
         processList = new LinkedList<>();
 
-        Socket socket;
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            ErrorLogger.getInstance().log("worker destroyed...");
+            for(Process process: processList){
+                process.destroy();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
+
         try {
             socket = new Socket(InetAddress.getLocalHost(), MasterMain.workersPort);
 
@@ -80,21 +93,11 @@ public class Worker {
                 newRequest(request);
 
                 ErrorLogger.getInstance().log("Request in worker: process id: " + ProcessHandle.current().pid() + " size of process: " + processList.size());
-                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " +
-                        ProcessHandle.current().children().collect(Collectors.toList()).get(0).info());
-                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " +
-                        ProcessHandle.current().children().collect(Collectors.toList()).get(1).info());
+                ErrorLogger.getInstance().log("Children: " + ProcessHandle.current().pid() + " " + ProcessHandle.current().children().collect(Collectors.toList()));
 
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            ErrorLogger.getInstance().log("worker destroyed...");
-            for(Process process: processList){
-                process.destroy();
-            }
-        }));
     }
 }

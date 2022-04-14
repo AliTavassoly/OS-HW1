@@ -16,7 +16,9 @@ public class Server {
     private List<Program> programs;
 
     private ServerSocket server;
+
     private ServerSocket cacheServer;
+    private Process cacheProcess;
 
     private List<WorkerHandler> workers;
 
@@ -265,6 +267,8 @@ public class Server {
                     commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.server.Cache"
             ).start();
 
+            cacheProcess = process;
+
             Logger.getInstance().log("cache start " + process.pid() + " " + MasterMain.cachePort);
         } catch (IOException e) {
             e.printStackTrace();
@@ -315,12 +319,12 @@ public class Server {
             workerHandler.shutDownHook();
         }
 
-        stop();
-    }
-
-    public void stop() {
         try {
+            Logger.getInstance().log("cache stop " + cacheProcess.pid() + " " + MasterMain.cachePort);
+
             server.close();
+            cacheServer.close();
+            cacheProcess.destroy();
         } catch (IOException e) {
             e.printStackTrace();
         }

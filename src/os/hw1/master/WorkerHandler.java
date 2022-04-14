@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class WorkerHandler {
     int currentW, workerId, currentPort;
@@ -22,6 +23,8 @@ public class WorkerHandler {
     private Process process;
 
     private Server server;
+
+    private Socket workerSocket;
 
     private List<Executable> executing;
 
@@ -50,7 +53,7 @@ public class WorkerHandler {
     }
 
     public void start(){
-        Logger.getInstance().log("worker start starting again " + workerId);
+        ErrorLogger.getInstance().log("worker start starting again " + workerId + " " + executing.size());
 
         String[] commonArgs = MasterMain.getCommonArgs();
         executing.clear();
@@ -60,9 +63,12 @@ public class WorkerHandler {
                     commonArgs[0], commonArgs[1], commonArgs[2], "os.hw1.master.Worker"
             ).start();
 
+            ErrorLogger.getInstance().log("Children: " + process.pid() + " " + process.children().count() + " " +
+                    process.children().collect(Collectors.toList()));
+
             processId = process.pid();
 
-            Socket workerSocket = serverSocket.accept();
+            workerSocket = serverSocket.accept();
 
             currentPort = workerSocket.getPort();
 
@@ -155,6 +161,11 @@ public class WorkerHandler {
     }
 
     private void stop(){
+        try {
+            workerSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         server.workerStopped(workerId);
     }
 
