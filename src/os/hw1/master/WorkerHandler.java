@@ -173,6 +173,10 @@ public class WorkerHandler {
         return processId;
     }
 
+    public int numberOfProcess(){
+        return executing.size();
+    }
+
     public void shutDownHook() {
         process.destroy();
     }

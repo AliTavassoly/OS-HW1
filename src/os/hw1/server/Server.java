@@ -333,6 +333,7 @@ public class Server {
     public void workerStopped(int workerId) {
         for (WorkerHandler workerHandler : workers) {
             if (workerHandler.getWorkerId() == workerId) {
+                ErrorLogger.getInstance().log("Worker process size when died: " + workerHandler.numberOfProcess());
                 synchronized (chainsLock) {
                     List<ExecuteChain> removeFromProcessing = new LinkedList<>();
                     for (ExecuteChain executeChain : processing) {
@@ -344,6 +345,7 @@ public class Server {
                     for (ExecuteChain executeChain : removeFromProcessing) {
                         processing.remove(executeChain);
                         requests.add(executeChain);
+                        chainsLock.notifyAll(); // TODO: ??
                     }
 
                     workerHandler.start();
