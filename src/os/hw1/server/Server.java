@@ -139,20 +139,23 @@ public class Server {
     private void handleRequests() {
         while (true) {
             handleRequest();
+
+            try {
+                Thread.sleep(70);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private void handleRequest() {
-        ErrorLogger.getInstance().log("start0 handling requests: " + requests + " is in cache: " + workersToWakeUp);
+        ErrorLogger.getInstance().log("start handling requests: " + requests + " workersToWake: " + workersToWakeUp + " process: " + processing);
 
         synchronized (chainsLock) {
             boolean shouldAssign = true;
             boolean oneRequestHandled = false;
-            ErrorLogger.getInstance().log("start1 handling requests: " + requests + " is in cache: " + workersToWakeUp);
 
             if (requests.size() > 0) {
-                ErrorLogger.getInstance().log("start2 handling requests: " + requests + " is in cache: " + workersToWakeUp);
-
                 ExecuteChain chain = requests.first();
                 int programId = chain.getCurrentExecutable().getProgramId();
 
@@ -183,6 +186,8 @@ public class Server {
                     }
                 }
 
+                ErrorLogger.getInstance().log("in handling requests: " + " can assign: " + canAssign(MasterMain.getWeightOfProgram(programId)) + " should assign: " + shouldAssign);
+
                 if (shouldAssign && canAssign(MasterMain.getWeightOfProgram(programId))) {
                     requests.pollFirst();
                     oneRequestHandled = true;
@@ -192,15 +197,8 @@ public class Server {
                 }
             }
 
-            if (!oneRequestHandled) {
-                try {
-                    if(workersToWakeUp.size() > 0)
-                        wakeWorkerUp();
-                    chainsLock.wait();
-                    return;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (!oneRequestHandled && workersToWakeUp.size() > 0) {
+                wakeWorkerUp();
             }
         }
     }
@@ -211,14 +209,10 @@ public class Server {
     }
 
     private boolean canAssign(int w) {
-        ErrorLogger.getInstance().log("Entered canAssign");
-
         for (WorkerHandler workerHandler : workers) {
-            ErrorLogger.getInstance().log("Assigning function: " + w + " " + workersToWakeUp + " " + workersToWakeUp.contains(workerHandler) + " " + workerHandler);
+            ErrorLogger.getInstance().log("Assigning function: " + w + " " + workersToWakeUp + " " + workersToWakeUp.contains(workerHandler) + " " + workerHandler.getCurrentW());
 
             if (!workersToWakeUp.contains(workerHandler) && workerHandler.getCurrentW() + w <= maxW) {
-                ErrorLogger.getInstance().log("Assigning function: " + w + " " + workersToWakeUp + " " + workersToWakeUp.contains(workerHandler) + " " + workerHandler);
-
                 return true;
             }
         }
@@ -264,7 +258,7 @@ public class Server {
 
             workerHandler.updateWeight(response.getProgramId());
 
-            chainsLock.notifyAll();
+//            chainsLock.notifyAll();
         }
     }
 
@@ -341,7 +335,7 @@ public class Server {
         synchronized (chainsLock) {
             workersToWakeUp.get(0).start();
             workersToWakeUp.remove(0);
-            chainsLock.notifyAll();
+//            chainsLock.notifyAll();
         }
     }
 
@@ -361,7 +355,7 @@ public class Server {
                         processing.remove(executeChain);
                         requests.add(executeChain);
                     }
-                    chainsLock.notifyAll(); // TODO: ??
+//                    chainsLock.notifyAll(); // TODO: ??
 
                     workersToWakeUp.add(workerHandler);
 

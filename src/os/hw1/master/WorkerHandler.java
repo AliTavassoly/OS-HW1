@@ -57,6 +57,7 @@ public class WorkerHandler {
 
         String[] commonArgs = MasterMain.getCommonArgs();
         executing.clear();
+        currentW = 0;
 
         try {
             process = new ProcessBuilder(
