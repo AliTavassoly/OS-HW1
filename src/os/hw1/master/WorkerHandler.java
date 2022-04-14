@@ -53,8 +53,6 @@ public class WorkerHandler {
     }
 
     public void start(){
-        ErrorLogger.getInstance().log("worker start starting again " + workerId + " " + executing.size());
-
         String[] commonArgs = MasterMain.getCommonArgs();
         executing.clear();
         currentW = 0;
@@ -112,12 +110,6 @@ public class WorkerHandler {
         request += MasterMain.getCommonArgs()[1];
         request += " ";
         request += MasterMain.getCommonArgs()[2];
-
-        try {
-            ErrorLogger.getInstance().log("request from server in worker with id: " + request.substring(0, 10)); // TODO: print request has bug
-        } catch (Exception e){
-            ErrorLogger.getInstance().log(e.getMessage());
-        }
 
         executing.add(executable);
 

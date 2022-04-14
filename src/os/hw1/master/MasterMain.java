@@ -22,10 +22,6 @@ public class MasterMain {
         numberOfWorkers = scanner.nextInt();
         w = scanner.nextInt();
 
-        ErrorLogger.getInstance().log("portNumber: " + portNumber);
-        ErrorLogger.getInstance().log("numberOfWorkers: " + numberOfWorkers);
-        ErrorLogger.getInstance().log("w: " + w);
-
         numberOfArgs = scanner.nextInt();;
 
         for(int i = 0; i < numberOfArgs; i++){
@@ -34,13 +30,10 @@ public class MasterMain {
         }
 
         numberOfPrograms = scanner.nextInt();
-        ErrorLogger.getInstance().log("numberOfPrograms: " + numberOfPrograms);
 
         for(int i = 0; i < numberOfPrograms; i++){
             String className = scanner.next();
             int weight = scanner.nextInt();
-
-            ErrorLogger.getInstance().log("input program: " + className + " " + weight);
 
             Program program = new Program(className, weight, i + 1);
             programs.add(program);

@@ -13,8 +13,8 @@ public class Logger {
 
     public void log(String message){
         System.out.println(message);
-        if(ErrorLogger.isDebug == 1) {
-            ErrorLogger.getInstance().log(message);
-        }
+//        if(ErrorLogger.isDebug == 1) {
+//            ErrorLogger.getInstance().log(message);
+//        }
     }
 }

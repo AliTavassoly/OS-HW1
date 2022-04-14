@@ -36,7 +36,6 @@ public class Worker {
                     commonArgs[0], commonArgs[1], commonArgs[2], className
             ).start();
             processList.add(process);
-            ErrorLogger.getInstance().log("New program creating...: " + ProcessHandle.current().pid());
 
             PrintStream printStream = new PrintStream(process.getOutputStream());
             Scanner scanner = new Scanner(process.getInputStream());
@@ -70,7 +69,6 @@ public class Worker {
         processList = new LinkedList<>();
 
         Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            ErrorLogger.getInstance().log("worker destroyed...");
             for(Process process: processList){
                 process.destroy();
             }
@@ -91,9 +89,6 @@ public class Worker {
                 String request = scanner.nextLine();
 
                 newRequest(request);
-
-                ErrorLogger.getInstance().log("Request in worker: process id: " + ProcessHandle.current().pid() + " size of process: " + processList.size());
-
             }
         } catch (IOException e) {
             e.printStackTrace();

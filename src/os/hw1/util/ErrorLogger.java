@@ -36,11 +36,11 @@ public class ErrorLogger {
         createFile();
     }
 
-    public void log(String message){
-        if(isDebug == 1) {
-            pw.println("Error logger:    " + message + " @ " + new Date().getTime());
-            pw.flush();
-        }
-        System.err.println("Error logger:    " + message);
-    }
+//    public void log(String message){
+//        if(isDebug == 1) {
+//            pw.println("Error logger:    " + message + " @ " + new Date().getTime());
+//            pw.flush();
+//        }
+//        System.err.println("Error logger:    " + message);
+//    }
 }

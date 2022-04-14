@@ -55,8 +55,6 @@ public class Server {
 
     private void newQuery(Socket socket, String query) {
         synchronized (chainsLock) {
-            ErrorLogger.getInstance().log("New request: " + query + " " + getWorkersWeights());
-
             requests.add(new ExecuteChain(priority++, getInputOfQuery(query), getQueueOfQuery(query), socket));
 
             chainsLock.notifyAll();
@@ -149,8 +147,6 @@ public class Server {
     }
 
     private void handleRequest() {
-        ErrorLogger.getInstance().log("start handling requests: " + requests + " workersToWake: " + workersToWakeUp + " process: " + processing);
-
         synchronized (chainsLock) {
             boolean shouldAssign = true;
             boolean oneRequestHandled = false;
@@ -186,8 +182,6 @@ public class Server {
                     }
                 }
 
-                ErrorLogger.getInstance().log("in handling requests: " + " can assign: " + canAssign(MasterMain.getWeightOfProgram(programId)) + " should assign: " + shouldAssign);
-
                 if (shouldAssign && canAssign(MasterMain.getWeightOfProgram(programId))) {
                     requests.pollFirst();
                     oneRequestHandled = true;
@@ -210,8 +204,6 @@ public class Server {
 
     private boolean canAssign(int w) {
         for (WorkerHandler workerHandler : workers) {
-            ErrorLogger.getInstance().log("Assigning function: " + w + " " + workersToWakeUp + " " + workersToWakeUp.contains(workerHandler) + " " + workerHandler.getCurrentW());
-
             if (!workersToWakeUp.contains(workerHandler) && workerHandler.getCurrentW() + w <= maxW) {
                 return true;
             }
@@ -228,14 +220,9 @@ public class Server {
         }
 
         chosenWorker.requestFromServer(chain.getCurrentExecutable());
-
-        ErrorLogger.getInstance().log("Assigned to: " + chosenWorker.getWorkerId() + " Executable: " + chain.getCurrentExecutable().toString() + " others weight: " + getWorkersWeights());
     }
 
     public void responseFromWorker(WorkerHandler workerHandler, Executable response, int workerId) {
-        ErrorLogger.getInstance().log("Response from worker: ProgramId: " + response.getProgramId() +
-                " Input: " + response.getInput() + " answer: " + response.getAnswer() + " workerId: " + workerId);
-
         List<ExecuteChain> chainsToRemove = new LinkedList<>();
         pushToCache(response.getProgramId(), response.getInput(), response.getAnswer());
 
@@ -331,7 +318,6 @@ public class Server {
     }
 
     public void wakeWorkerUp(){
-        ErrorLogger.getInstance().log("Workers to wakeup size: " + workersToWakeUp.size() + " request size: " + requests.size());
         synchronized (chainsLock) {
             workersToWakeUp.get(0).start();
             workersToWakeUp.remove(0);
@@ -342,7 +328,6 @@ public class Server {
     public void workerStopped(int workerId) {
         for (WorkerHandler workerHandler : workers) {
             if (workerHandler.getWorkerId() == workerId) {
-                ErrorLogger.getInstance().log("Worker process size when died: " + workerHandler.numberOfProcess() + " Process size: " + processing.size() + " " + " Request size: " + requests.size());
                 synchronized (chainsLock) {
                     List<ExecuteChain> removeFromProcessing = new LinkedList<>();
                     for (ExecuteChain executeChain : processing) {
